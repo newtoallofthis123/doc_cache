@@ -1,0 +1,7 @@
+/backend/.idea
+/backend/bin
+*/.env
+/frontend/node_modules
+/frontend/.env
+/frontend/.idea
+/frontend/.next

@@ -67,6 +67,8 @@ func (pq *DBInstance) createTable() error {
 		description TEXT,
 		phone TEXT NOT NULL,
 		medicines TEXT NOT NULL,
+		paid BOOLEAN DEFAULT FALSE,
+		next_appointment TIMESTAMP DEFAULT INTERVAL '2 week' + NOW(),
 		created_at TIMESTAMP DEFAULT NOW(),
 		doc_id INT REFERENCES doctors(doc_id)
 	);
@@ -178,7 +180,7 @@ func (pq *DBInstance) GetPatient(pId string) (Patient, error) {
 	// Some unused variables
 	var id int
 
-	err := row.Scan(&id, &patient.FullName, &patient.Age, &patient.Gender, &patient.PId, &patient.Problems, &patient.Diagnosis, &patient.Description, &patient.Phone, &patient.Medicines, &patient.CreatedAt, &patient.DocId)
+	err := row.Scan(&id, &patient.FullName, &patient.Age, &patient.Gender, &patient.PId, &patient.Problems, &patient.Diagnosis, &patient.Description, &patient.Phone, &patient.Medicines, &patient.Paid, &patient.NextAppointment, &patient.CreatedAt, &patient.DocId)
 	if err != nil {
 		return Patient{}, err
 	}
@@ -201,7 +203,7 @@ func (pq *DBInstance) GetAllPatients() ([]Patient, error) {
 		var patient Patient
 		var id int
 
-		err := rows.Scan(&id, &patient.FullName, &patient.Age, &patient.Gender, &patient.PId, &patient.Problems, &patient.Diagnosis, &patient.Description, &patient.Phone, &patient.Medicines, &patient.CreatedAt, &patient.DocId)
+		err := rows.Scan(&id, &patient.FullName, &patient.Age, &patient.Gender, &patient.PId, &patient.Problems, &patient.Diagnosis, &patient.Description, &patient.Phone, &patient.Medicines, &patient.Paid, &patient.NextAppointment, &patient.CreatedAt, &patient.DocId)
 		if err != nil {
 			return nil, err
 		}
@@ -213,6 +215,7 @@ func (pq *DBInstance) GetAllPatients() ([]Patient, error) {
 }
 
 func (pq *DBInstance) SearchPatient(query string) ([]Patient, error) {
+	query = strings.ToLower(query)
 	patients, err := pq.GetAllPatients()
 	if err != nil {
 		return nil, err
@@ -268,12 +271,14 @@ func (pq *DBInstance) UpdatePatient(pId string, patient Patient) error {
 		    description=$6,
 		    phone=$7,
 		    medicines=$8,
-		    doc_id=$9,
-		    created_at=$10
-		WHERE p_id=$11;
+		    paid=$9,
+		    next_appointment=$10,
+		    doc_id=$11,
+		    created_at=$12
+		WHERE p_id=$13;
 	`
 
-	_, err = pq.Db.Exec(query, patient.FullName, patient.Age, patient.Gender, patient.Problems, patient.Diagnosis, patient.Description, patient.Phone, patient.Medicines, patient.DocId, patient.CreatedAt, pId)
+	_, err = pq.Db.Exec(query, patient.FullName, patient.Age, patient.Gender, patient.Problems, patient.Diagnosis, patient.Description, patient.Phone, patient.Medicines, patient.Paid, patient.NextAppointment, patient.DocId, patient.CreatedAt, pId)
 
 	return err
 }

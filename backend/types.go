@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 type Env struct {
 	DB        string
 	Password  string
@@ -34,17 +36,19 @@ type CreatePatientRequest struct {
 }
 
 type Patient struct {
-	FullName    string `json:"full_name"`
-	Age         int    `json:"age"`
-	Gender      string `json:"gender"`
-	PId         string `json:"p_id"`
-	Problems    string `json:"problems"`
-	Diagnosis   string `json:"diagnosis"`
-	Description string `json:"description"`
-	Phone       string `json:"phone"`
-	Medicines   string `json:"medicines"`
-	DocId       int    `json:"doc_id"`
-	CreatedAt   string `json:"created_at"`
+	FullName        string    `json:"full_name"`
+	Age             int       `json:"age"`
+	Gender          string    `json:"gender"`
+	PId             string    `json:"p_id"`
+	Problems        string    `json:"problems"`
+	Diagnosis       string    `json:"diagnosis"`
+	Description     string    `json:"description"`
+	Phone           string    `json:"phone"`
+	Medicines       string    `json:"medicines"`
+	Paid            bool      `json:"paid"`
+	NextAppointment time.Time `json:"next_appointment"`
+	DocId           int       `json:"doc_id"`
+	CreatedAt       time.Time `json:"created_at"`
 }
 
 type DoctorLoginRequest struct {
@@ -55,4 +59,9 @@ type DoctorLoginRequest struct {
 type DoctorLoginResponse struct {
 	Token  string `json:"token"`
 	Number int    `json:"number"`
+}
+
+type NextAppointmentRequest struct {
+	PId             string    `json:"p_id"`
+	NextAppointment time.Time `json:"next_appointment"`
 }

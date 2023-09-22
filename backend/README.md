@@ -68,7 +68,7 @@ the `types.go` file to get a good idea of the API.
 
 Here is a quick overview of the API, this is a screenshot from the Gin Configuration.
 
-![API](/assets/api.png)
+![API](/backend/assets/api.png)
 
 Those are all the endpoints that the Doc Cache Backend exposes.
 Most to all of them are self explanatory and need a JWT token to access.

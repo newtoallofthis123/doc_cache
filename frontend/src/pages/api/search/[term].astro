@@ -1,0 +1,28 @@
+---
+const {term} = Astro.params
+
+if(term == ''){
+    return new Response(JSON.stringify(""))
+}
+
+const res = await fetch(`http://localhost:2468/search?q=${term}`, {
+    method: 'GET',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': Astro.cookies.get('token').value || ''
+    }
+})
+
+const data = await res.json()
+
+if(data == null){
+    return new Response(JSON.stringify(""))
+}
+
+return new Response(JSON.stringify(data), {
+    headers: {
+        'content-type': 'application/json;charset=UTF-8',
+        'cache-control': 'max-age=0, s-maxage=86400',
+    }
+})
+---

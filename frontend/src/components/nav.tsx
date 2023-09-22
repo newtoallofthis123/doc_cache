@@ -1,13 +1,9 @@
-import React from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import logo from '@/app/icon.svg'
-import Auth from '@/auth';
+import { Button } from "@/components/ui/button"
+import {Input} from "@/components/ui/input";
 
-type Props = {};
-
-export default async function Nav({}: Props) {
-    const auth = await Auth();
+export default function Nav({
+    auth = false,
+    title = 'DocCache',}) {
     return (
         <>
             <nav>
@@ -18,11 +14,11 @@ export default async function Nav({}: Props) {
                     className="flex flex-row border-2 border-black justify-between items-center p-4"
                 >
                     <div className="flex-shrink-0 flex flex-row justify-around">
-                        <Image
+                        <img
                             width={162}
                             height={162}
                             className="w-10 h-10 md:w-12 md:h-12"
-                            src={logo}
+                            src="/favicon.svg"
                             alt="DocCache Logo"
                         />
                         <h1 className="text-3xl font-bold p-1 ml-2">
@@ -41,32 +37,34 @@ export default async function Nav({}: Props) {
                             ].map((link) => {
                                 return (
                                     <li className="text-lg" key={link}>
-                                        <Link href={link}>
+                                        <a href={"/" + link}>
                                             {link.slice(0, 1).toUpperCase() +
                                                 link.slice(1)}
-                                        </Link>
+                                        </a>
                                     </li>
                                 );
                             })}
                         </ul>
                     </div>
-                    <div className="border-2 p-1 border-gray-600 rounded-3xl">
-                        <div>
-                            <input
-                                type="search"
-                                placeholder="Type to Search anything"
-                                className="w-80 text-center text-sm px-1 hover:outline-none focus:outline-none"
-                                name="search"
-                                id="search"
-                            />
-                            <button type="submit">🔍</button>
-                        </div>
+                    <div className="border-2 p-1 w-96 border-neutral-400 rounded-3xl drop-shadow-lg">
+                        <form onSubmit={
+                            (e) => {
+                                e.preventDefault();
+                                const query = e.currentTarget.query.value;
+                                typeof window !== 'undefined' && (
+                                    window.location.href = `/search/${query}`
+                                )
+                            }
+                        } className="flex w-full items-center">
+                            <Input type="search" name="query" className="border-0 focus-visible:outline-none focus-visible:ring-0" placeholder="Search" />
+                            <Button className="bg-inherit border-0 shadow-none text-black text-xl hover:bg-inherit" type="submit">🔍</Button>
+                        </form>
                     </div>
                     <div>
-                        <button className="text-white text-xl bg-black border-2 border-black py-2 px-4 rounded">
-                            {!auth && <Link href="auth">Login</Link>}
-                            {auth && <Link href="auth">Logout</Link>}
-                        </button>
+                        <Button className="text-xl px-5 py-6">
+                            {!auth && <a href="/auth/login">Login</a>}
+                            {auth && <a href="/logout">Logout</a>}
+                        </Button>
                     </div>
                 </div>
             </nav>

@@ -5,3 +5,5 @@
 /frontend/.env
 /frontend/.idea
 /frontend/.next
+/*.zip
+/frontend/.vscode

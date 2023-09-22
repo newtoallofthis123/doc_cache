@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/golang-jwt/jwt/v4"
+
 	"github.com/gin-gonic/gin"
 	cors "github.com/rs/cors/wrapper/gin"
 )
@@ -62,7 +64,6 @@ func (api *ApiServer) handleGetPatient(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(patient)
 	c.JSON(200, patient)
 }
 
@@ -137,13 +138,27 @@ func (api *ApiServer) handleDocAuth(c *gin.Context) {
 	c.JSON(200, "Authorized")
 }
 
+func (api *ApiServer) handlePatientTransfer(c *gin.Context) {
+	if c.Request.Method != "POST" {
+		c.JSON(400, "Bad Request")
+		return
+	}
+
+	//TODO: Implement Patient Transfer
+}
+
 func (api *ApiServer) handlePatientCreation(c *gin.Context) {
+	err := api.handleJWT(c)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
 	if c.Request.Method != "POST" {
 		c.JSON(400, "Bad Request")
 		return
 	}
 	var createPatientRequest CreatePatientRequest
-	err := c.BindJSON(&createPatientRequest)
+	err = c.BindJSON(&createPatientRequest)
 	if err != nil {
 		c.JSON(400, err)
 		return
@@ -156,10 +171,104 @@ func (api *ApiServer) handlePatientCreation(c *gin.Context) {
 	c.JSON(200, "Patient Created")
 }
 
+func (api *ApiServer) handleAllPatients(c *gin.Context) {
+	patients, err := api.store.GetAllPatients()
+	if err != nil {
+		c.JSON(500, err)
+	}
+
+	jwtToken := c.Request.Header.Get("Authorization")
+	if jwtToken == "" {
+		c.JSON(401, "Unauthorized")
+		return
+	}
+	token, err := ValidateJWT(jwtToken)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+	if !token.Valid {
+		c.JSON(401, "Unauthorized")
+		return
+	}
+
+	c.JSON(200, patients)
+}
+
+func (api *ApiServer) handleJWT(c *gin.Context) error {
+	jwtToken := c.Request.Header.Get("Authorization")
+	if jwtToken == "" {
+		c.JSON(401, "Unauthorized")
+		return jwt.ErrInvalidKey
+	}
+	token, err := ValidateJWT(jwtToken)
+	if err != nil {
+		c.JSON(500, err)
+		return err
+	}
+	if !token.Valid {
+		c.JSON(401, "Unauthorized")
+		return jwt.ErrInvalidKey
+	}
+	return nil
+}
+
+func (api *ApiServer) handlePatientSearch(c *gin.Context) {
+	query := c.Query("q")
+	patients, err := api.store.SearchPatient(query)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+	c.JSON(200, patients)
+}
+
+func (api *ApiServer) handlePatientDelete(c *gin.Context) {
+	err := api.handleJWT(c)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+	pId := c.Param("p_id")
+	err = api.store.DeletePatient(pId)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+	c.JSON(200, "Patient Deleted")
+}
+
+func (api *ApiServer) handlePatientUpdate(c *gin.Context) {
+	err := api.handleJWT(c)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+	pId := c.Param("p_id")
+	var updatePatientRequest Patient
+	err = c.BindJSON(&updatePatientRequest)
+	if err != nil {
+		c.JSON(400, err)
+		return
+	}
+	err = api.store.UpdatePatient(pId, updatePatientRequest)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+	c.JSON(200, "Patient Updated")
+}
+
 func (api *ApiServer) Start() error {
 	r := gin.Default()
 
-	r.Use(cors.Default())
+	config := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:3000"},
+		AllowedMethods: []string{"GET", "POST"},
+	})
+
+	// Use the CORS middleware
+	r.Use(config)
 
 	//! Will be used in production
 	err := r.SetTrustedProxies(nil)
@@ -172,11 +281,15 @@ func (api *ApiServer) Start() error {
 	r.GET("/doctors/:doc_id", api.handleGetDoctor)
 	r.GET("/patients/:p_id", api.handleGetPatient)
 	r.GET("/auth", api.handleDocAuth)
+	r.GET("/all", api.handleAllPatients)
+	r.GET("/search", api.handlePatientSearch)
+	r.GET("/delete/:p_id", api.handlePatientDelete)
 
 	//# All The Post Routes
 	r.POST("/login", api.handleDoctorLogin)
 	r.POST("/new/doctor", api.handleDoctorCreation)
 	r.POST("/new/patient", api.handlePatientCreation)
+	r.POST("/update/:p_id", api.handlePatientUpdate)
 
 	err = r.Run(api.listenAddr)
 	return err

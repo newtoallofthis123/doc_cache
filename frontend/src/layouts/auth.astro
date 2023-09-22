@@ -1,0 +1,23 @@
+---
+import Base from "./base.astro";
+
+const {title} = Astro.props
+
+let auth_token = Astro.cookies.get('token')?.value || ''
+
+let res = await fetch('http://localhost:2468/auth', {
+        headers: {
+            'Authorization': auth_token || '',
+        }
+    }
+    )
+if(res.status != 200){
+    Astro.redirect('/login')
+}
+---
+
+<Base auth={
+    auth_token != ''
+} title={title}>
+    <slot />
+</Base>

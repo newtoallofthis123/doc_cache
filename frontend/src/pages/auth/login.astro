@@ -1,0 +1,20 @@
+---
+import Base from "../../layouts/base.astro"
+import Login from "../../components/login";
+---
+
+<Base>
+    <div class="flex flex-col items-center my-10">
+        <div class="flex flex-col justify-center">
+            <h1 class="text-5xl font-heading text-neutral-800">
+                Welcome Back Doc! 🩺
+            </h1>
+            <p class="py-5 text-xl text-neutral-900">
+                The World needs more heroes like you :)
+            </p>
+            <div>
+                <Login client:load />
+            </div>
+        </div>
+    </div>
+</Base>

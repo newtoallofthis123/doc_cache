@@ -3,6 +3,8 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
+	"strings"
 
 	_ "github.com/lib/pq"
 )
@@ -14,6 +16,10 @@ type Store interface {
 	CreatePatient(patient CreatePatientRequest) error
 	GetPatient(pId string) (Patient, error)
 	GetDocPassword(docId int) (string, error)
+	GetAllPatients() ([]Patient, error)
+	SearchPatient(query string) ([]Patient, error)
+	DeletePatient(pId string) error
+	UpdatePatient(pId string, patient Patient) error
 }
 
 type DBInstance struct {
@@ -177,4 +183,97 @@ func (pq *DBInstance) GetPatient(pId string) (Patient, error) {
 		return Patient{}, err
 	}
 	return patient, nil
+}
+
+func (pq *DBInstance) GetAllPatients() ([]Patient, error) {
+	query := `
+	SELECT * from patients;
+	`
+
+	rows, err := pq.Db.Query(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var patients []Patient
+
+	for rows.Next() {
+		var patient Patient
+		var id int
+
+		err := rows.Scan(&id, &patient.FullName, &patient.Age, &patient.Gender, &patient.PId, &patient.Problems, &patient.Diagnosis, &patient.Description, &patient.Phone, &patient.Medicines, &patient.CreatedAt, &patient.DocId)
+		if err != nil {
+			return nil, err
+		}
+		patients = append(patients, patient)
+	}
+	defer rows.Close()
+
+	return patients, nil
+}
+
+func (pq *DBInstance) SearchPatient(query string) ([]Patient, error) {
+	patients, err := pq.GetAllPatients()
+	if err != nil {
+		return nil, err
+	}
+
+	// convert every patient to a string
+	// and then check if the query is in the string
+	// if it is then append it to the results
+	// and return the results
+	var results []Patient
+
+	for _, patient := range patients {
+		patientString := fmt.Sprintf("%v", patient)
+		//remove all the -, :, _ and lowercase the string
+		patientString = strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(patientString, "-", ""), ":", ""), "_", ""))
+		if strings.Contains(patientString, query) {
+			results = append(results, patient)
+		}
+	}
+
+	return results, nil
+}
+
+func (pq *DBInstance) DeletePatient(pId string) error {
+	_, err := pq.GetPatient(pId)
+	if err != nil {
+		return err
+	}
+
+	query := `
+	DELETE FROM patients WHERE p_id = $1
+	`
+
+	_, err = pq.Db.Exec(query, pId)
+	return err
+}
+
+func (pq *DBInstance) UpdatePatient(pId string, patient Patient) error {
+	_, err := pq.GetPatient(pId)
+	if err != nil {
+		return err
+	}
+
+	// SQL to update the patient
+	query := `
+		UPDATE patients
+		SET 
+		    full_name=$1,
+		    age=$2,
+		    gender=$3,
+		    problems=$4,
+		    diagnosis=$5,
+		    description=$6,
+		    phone=$7,
+		    medicines=$8,
+		    doc_id=$9,
+		    created_at=$10
+		WHERE p_id=$11;
+	`
+
+	_, err = pq.Db.Exec(query, patient.FullName, patient.Age, patient.Gender, patient.Problems, patient.Diagnosis, patient.Description, patient.Phone, patient.Medicines, patient.DocId, patient.CreatedAt, pId)
+
+	return err
 }

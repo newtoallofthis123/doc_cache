@@ -65,3 +65,8 @@ type NextAppointmentRequest struct {
 	PId             string    `json:"p_id"`
 	NextAppointment time.Time `json:"next_appointment"`
 }
+
+type TransferPatientRequest struct {
+	PId     string `json:"p_id"`
+	ToDocId int    `json:"to_doc_id"`
+}

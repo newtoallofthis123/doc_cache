@@ -140,10 +140,33 @@ func (api *ApiServer) handlePatientTransfer(c *gin.Context) {
 	err := api.handleJWT(c)
 	if err != nil {
 		log.Println("Error Authenticating JWT for patient transfer")
+		log.Println("ERR:", err)
 		c.JSON(500, err)
 		return
 	}
-	//TODO: Implement Patient Transfer
+	var transferPatientRequest TransferPatientRequest
+	err = c.BindJSON(&transferPatientRequest)
+	if err != nil {
+		log.Println("Error binding json for patient transfer")
+		c.JSON(400, err)
+		return
+	}
+	patient, err := api.store.GetPatient(transferPatientRequest.PId)
+	if err != nil {
+		log.Println("Error getting patient from db")
+		log.Println("ERR:", err)
+		c.JSON(500, err)
+		return
+	}
+	patient.DocId = transferPatientRequest.ToDocId
+	err = api.store.UpdatePatient(transferPatientRequest.PId, patient)
+	if err != nil {
+		log.Println("Error transferring patient in db")
+		log.Println("ERR:", err)
+		c.JSON(500, err)
+		return
+	}
+	c.JSON(200, "Patient Transferred")
 }
 
 func (api *ApiServer) handlePatientCreation(c *gin.Context) {
@@ -328,6 +351,10 @@ func (api *ApiServer) handleNextAppointment(c *gin.Context) {
 	c.JSON(200, "Next Appointment Updated")
 }
 
+func (api *ApiServer) handleViewSource(c *gin.Context) {
+	c.Redirect(301, "https://github.com/newtoallofthis123/doc_cache/tree/main/backend")
+}
+
 func (api *ApiServer) Start() error {
 	r := gin.Default()
 
@@ -352,6 +379,7 @@ func (api *ApiServer) Start() error {
 	r.GET("/auth", api.handleDocAuth)
 	r.GET("/all", api.handleAllPatients)
 	r.GET("/search", api.handlePatientSearch)
+	r.GET("/source", api.handleViewSource)
 
 	//# All The Post Routes
 	r.POST("/login", api.handleDoctorLogin)
@@ -362,6 +390,7 @@ func (api *ApiServer) Start() error {
 	r.PUT("/update/:p_id", api.handlePatientUpdate)
 	r.PUT("/paid/:p_id", api.handleUserPaid)
 	r.PUT("/next_appointment", api.handleNextAppointment)
+	r.PUT("/transfer", api.handlePatientTransfer)
 
 	//# All The Delete Routes
 	r.DELETE("/delete/:p_id", api.handlePatientDelete)

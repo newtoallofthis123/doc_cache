@@ -13,13 +13,20 @@ type Store interface {
 	Init() error
 	CreateDoctor(doc CreateDoctorRequest) error
 	GetDoctor(docId int) (Doctor, error)
-	CreatePatient(patient CreatePatientRequest) error
-	GetPatient(pId string) (Patient, error)
 	GetDocPassword(docId int) (string, error)
+	CreateEmp(emp CreateEmpRequest) error
+	GetEmp(empId int) (Emp, error)
+	GetEmpPassword(empId int) (string, error)
+	DeleteEmp(empID int) error
+	CreatePatient(patient CreatePatientRequest) (string, error)
+	GetPatient(pId string) (Patient, error)
 	GetAllPatients() ([]Patient, error)
 	SearchPatient(query string) ([]Patient, error)
 	DeletePatient(pId string) error
 	UpdatePatient(pId string, patient Patient) error
+	CreatePending(pId string, docId int) error
+	DeletePending(pId string) error
+	GetPending(docId int) ([]Patient, error)
 }
 
 type DBInstance struct {
@@ -55,19 +62,35 @@ func (pq *DBInstance) createTable() error {
 		return err
 	}
 
+	employeesQuery := `
+	CREATE TABLE IF NOT EXISTS employees (
+			emp_id SERIAL PRIMARY KEY,
+			full_name TEXT NOT NULL,
+			role TEXT NOT NULL,
+			password TEXT NOT NULL,
+			created_at TIMESTAMP DEFAULT NOW()
+	    );
+	`
+
+	_, err = pq.Db.Exec(employeesQuery)
+	if err != nil {
+		return err
+	}
+
 	patientsQuery := `
 	CREATE TABLE IF NOT EXISTS patients (
-		id SERIAL PRIMARY KEY,
+		id SERIAL,
 		full_name TEXT NOT NULL,
 		age INT NOT NULL,
 		gender TEXT,
-		p_id TEXT NOT NULL,
+		p_id TEXT UNIQUE PRIMARY KEY NOT NULL,
 		problems TEXT NOT NULL,
 		diagnosis TEXT NOT NULL,
 		description TEXT,
 		phone TEXT NOT NULL,
 		medicines TEXT NOT NULL,
 		paid BOOLEAN DEFAULT FALSE,
+		payment INT NOT NULL,
 		next_appointment TIMESTAMP DEFAULT INTERVAL '2 week' + NOW(),
 		created_at TIMESTAMP DEFAULT NOW(),
 		doc_id INT REFERENCES doctors(doc_id)
@@ -75,6 +98,20 @@ func (pq *DBInstance) createTable() error {
 	`
 
 	_, err = pq.Db.Exec(patientsQuery)
+	if err != nil {
+		return err
+	}
+
+	pendingQuery := `
+	CREATE TABLE IF NOT EXISTS pending (
+	    		id SERIAL PRIMARY KEY,
+	    		p_id TEXT REFERENCES patients(p_id),
+	    		doc_id INT REFERENCES doctors(doc_id),
+	    		created_at TIMESTAMP DEFAULT NOW()
+	    );
+	`
+
+	_, err = pq.Db.Exec(pendingQuery)
 	if err != nil {
 		return err
 	}
@@ -149,20 +186,23 @@ func (pq *DBInstance) doesDoctorExist(docId int) bool {
 }
 
 // CreatePatient Accepts a CreatePatientRequest struct and creates a new patient
-func (pq *DBInstance) CreatePatient(patient CreatePatientRequest) error {
+func (pq *DBInstance) CreatePatient(patient CreatePatientRequest) (string, error) {
 	pId := RanHash()
 	query := `
-	INSERT INTO patients (full_name, age, gender, p_id, problems, diagnosis, description, phone, medicines, doc_id) 
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	INSERT INTO patients (full_name, age, gender, p_id, problems, diagnosis, description, phone, medicines, payment, doc_id) 
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	`
 
 	// Check if the doctor exists using the doc_id
 	if !pq.doesDoctorExist(patient.DocId) {
-		return fmt.Errorf("doctor with id %d doesn't exist", patient.DocId)
+		return "", fmt.Errorf("doctor with id %d doesn't exist", patient.DocId)
 	}
 
-	_, err := pq.Db.Exec(query, patient.FullName, patient.Age, patient.Gender, pId, patient.Problems, patient.Diagnosis, patient.Description, patient.Phone, patient.Medicines, patient.DocId)
-	return err
+	_, err := pq.Db.Exec(query, patient.FullName, patient.Age, patient.Gender, pId, patient.Problems, patient.Diagnosis, patient.Description, patient.Phone, patient.Medicines, patient.Payment, patient.DocId)
+	if err != nil {
+		return "", err
+	}
+	return pId, nil
 }
 
 // GetPatient Accepts a p_id and returns a Patient struct
@@ -177,7 +217,7 @@ func (pq *DBInstance) GetPatient(pId string) (Patient, error) {
 	// Some unused variables
 	var id int
 
-	err := row.Scan(&id, &patient.FullName, &patient.Age, &patient.Gender, &patient.PId, &patient.Problems, &patient.Diagnosis, &patient.Description, &patient.Phone, &patient.Medicines, &patient.Paid, &patient.NextAppointment, &patient.CreatedAt, &patient.DocId)
+	err := row.Scan(&id, &patient.FullName, &patient.Age, &patient.Gender, &patient.PId, &patient.Problems, &patient.Diagnosis, &patient.Description, &patient.Phone, &patient.Medicines, &patient.Paid, &patient.Payment, &patient.NextAppointment, &patient.CreatedAt, &patient.DocId)
 	if err != nil {
 		return Patient{}, err
 	}
@@ -200,7 +240,7 @@ func (pq *DBInstance) GetAllPatients() ([]Patient, error) {
 		var patient Patient
 		var id int
 
-		err := rows.Scan(&id, &patient.FullName, &patient.Age, &patient.Gender, &patient.PId, &patient.Problems, &patient.Diagnosis, &patient.Description, &patient.Phone, &patient.Medicines, &patient.Paid, &patient.NextAppointment, &patient.CreatedAt, &patient.DocId)
+		err := rows.Scan(&id, &patient.FullName, &patient.Age, &patient.Gender, &patient.PId, &patient.Problems, &patient.Diagnosis, &patient.Description, &patient.Phone, &patient.Medicines, &patient.Paid, &patient.Payment, &patient.NextAppointment, &patient.CreatedAt, &patient.DocId)
 		if err != nil {
 			return nil, err
 		}
@@ -269,13 +309,159 @@ func (pq *DBInstance) UpdatePatient(pId string, patient Patient) error {
 		    phone=$7,
 		    medicines=$8,
 		    paid=$9,
-		    next_appointment=$10,
-		    doc_id=$11,
-		    created_at=$12
-		WHERE p_id=$13;
+		    payment=$10,
+		    next_appointment=$11,
+		    doc_id=$12,
+		    created_at=$13
+		WHERE p_id=$14;
 	`
 
-	_, err = pq.Db.Exec(query, patient.FullName, patient.Age, patient.Gender, patient.Problems, patient.Diagnosis, patient.Description, patient.Phone, patient.Medicines, patient.Paid, patient.NextAppointment, patient.DocId, patient.CreatedAt, pId)
+	_, err = pq.Db.Exec(query, patient.FullName, patient.Age, patient.Gender, patient.Problems, patient.Diagnosis, patient.Description, patient.Phone, patient.Medicines, patient.Paid, patient.Payment, patient.NextAppointment, patient.DocId, patient.CreatedAt, pId)
 
 	return err
+}
+
+func (pq *DBInstance) doesPatientExist(pId string) bool {
+	_, err := pq.GetPatient(pId)
+	return err == nil
+}
+
+func (pq *DBInstance) CreateEmp(emp CreateEmpRequest) error {
+	query := `
+	INSERT INTO employees (full_name, role, password)
+	VALUES ($1, $2, $3)
+	`
+
+	hashedPassword, err := HashPassword(emp.Password)
+	if err != nil {
+		return err
+	}
+
+	_, err = pq.Db.Exec(query, emp.FullName, emp.Role, hashedPassword)
+	return err
+}
+
+func (pq *DBInstance) DeleteEmp(empID int) error {
+	if !pq.doesEmployeeExist(empID) {
+		return fmt.Errorf("employee with id %d doesn't exist", empID)
+	}
+
+	query := `
+	DELETE FROM employees WHERE emp_id = $1
+	`
+
+	_, err := pq.Db.Exec(query, empID)
+	return err
+}
+
+// GetEmp Accepts a docId and returns a Doctor struct
+func (pq DBInstance) GetEmp(empId int) (Emp, error) {
+	query := `
+	SELECT * FROM employees WHERE emp_id = $1
+	`
+
+	row := pq.Db.QueryRow(query, empId)
+	var emp Emp
+
+	// Same as the doctor struct
+	hashedPassword := ""
+
+	err := row.Scan(&emp.EmpId, &emp.FullName, &emp.Role, &hashedPassword, &emp.CreatedAt)
+	if err != nil {
+		return Emp{}, err
+	}
+	return emp, nil
+}
+
+func (pq *DBInstance) GetEmpPassword(empId int) (string, error) {
+	query := `
+	SELECT password FROM employees WHERE emp_id = $1
+	`
+
+	row := pq.Db.QueryRow(query, empId)
+	var hashedPassword string
+
+	err := row.Scan(&hashedPassword)
+	if err != nil {
+		return "", err
+	}
+	return hashedPassword, nil
+}
+
+// A small help function that checks if a doctor exists
+func (pq *DBInstance) doesEmployeeExist(empId int) bool {
+	_, err := pq.GetEmp(empId)
+	return err == nil
+}
+
+// CreatePending Accepts a p_id and doc_id and creates a new pending
+func (pq *DBInstance) CreatePending(pId string, docId int) error {
+	if !pq.doesPatientExist(pId) {
+		return fmt.Errorf("patient with id %s doesn't exist", pId)
+	}
+
+	if !pq.doesDoctorExist(docId) {
+		return fmt.Errorf("doctor with id %d doesn't exist", docId)
+	}
+
+	query := `
+	INSERT INTO pending (p_id, doc_id)
+	VALUES ($1, $2)
+	`
+
+	_, err := pq.Db.Exec(query, pId, docId)
+	return err
+}
+
+// DeletePending Accepts a p_id and deletes the pending
+func (pq *DBInstance) DeletePending(pId string) error {
+	query := `
+	DELETE FROM pending WHERE p_id = $1
+	`
+
+	_, err := pq.Db.Exec(query, pId)
+	return err
+}
+
+// GetPending Get the pending requests for a doctor
+func (pq *DBInstance) GetPending(docId int) ([]Patient, error) {
+	if !pq.doesDoctorExist(docId) {
+		return nil, fmt.Errorf("doctor with id %d doesn't exist", docId)
+	}
+
+	query := `
+	SELECT * FROM pending WHERE doc_id = $1
+	`
+
+	rows, err := pq.Db.Query(query, docId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pendingPatients []Patient
+
+	for rows.Next() {
+		// Well I only need the p_id
+		// But I need to scan the other fields as well
+		var pId string
+		var docId int
+		var id int
+		var createdAt string
+
+		err := rows.Scan(&id, &pId, &docId, &createdAt)
+
+		if err != nil {
+			return nil, err
+		}
+
+		patient, err := pq.GetPatient(pId)
+		if err != nil {
+			return nil, err
+		}
+
+		pendingPatients = append(pendingPatients, patient)
+	}
+	defer rows.Close()
+
+	return pendingPatients, nil
 }

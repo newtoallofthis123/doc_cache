@@ -32,6 +32,7 @@ type CreatePatientRequest struct {
 	Description string `json:"description"`
 	Phone       string `json:"phone"`
 	Medicines   string `json:"medicines"`
+	Payment     int    `json:"payment"`
 	DocId       int    `json:"doc_id"`
 }
 
@@ -46,6 +47,7 @@ type Patient struct {
 	Phone           string    `json:"phone"`
 	Medicines       string    `json:"medicines"`
 	Paid            bool      `json:"paid"`
+	Payment         int       `json:"payment"`
 	NextAppointment time.Time `json:"next_appointment"`
 	DocId           int       `json:"doc_id"`
 	CreatedAt       time.Time `json:"created_at"`
@@ -61,6 +63,16 @@ type DoctorLoginResponse struct {
 	Number int    `json:"number"`
 }
 
+type EmpLoginRequest struct {
+	EmpId    int    `json:"emp_id"`
+	Password string `json:"password"`
+}
+
+type EmpLoginResponse struct {
+	Token  string `json:"token"`
+	Number int    `json:"number"`
+}
+
 type NextAppointmentRequest struct {
 	PId             string    `json:"p_id"`
 	NextAppointment time.Time `json:"next_appointment"`
@@ -69,4 +81,23 @@ type NextAppointmentRequest struct {
 type TransferPatientRequest struct {
 	PId     string `json:"p_id"`
 	ToDocId int    `json:"to_doc_id"`
+}
+
+type CreateEmpRequest struct {
+	FullName string `json:"full_name"`
+	Role     string `json:"role"`
+	Password string `json:"password"`
+}
+
+type Emp struct {
+	EmpId          int    `json:"emp_id"`
+	FullName       string `json:"full_name"`
+	Role           string `json:"role"`
+	CreatedAt      string `json:"created_at"`
+	HashedPassword string `json:"password"`
+}
+
+type PendingRequest struct {
+	PId   string `json:"p_id"`
+	DocId int    `json:"doc_id"`
 }

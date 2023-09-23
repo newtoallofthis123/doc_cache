@@ -4,7 +4,7 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/golang-jwt/jwt/v4"
+	jwt "github.com/golang-jwt/jwt/v4"
 
 	"github.com/gin-gonic/gin"
 	cors "github.com/rs/cors/wrapper/gin"
@@ -115,7 +115,7 @@ func (api *ApiServer) handleDoctorLogin(c *gin.Context) {
 	)
 }
 
-func (api *ApiServer) handleDocAuth(c *gin.Context) {
+func (api *ApiServer) handleAuth(c *gin.Context) {
 	jwtToken := c.Request.Header.Get("Authorization")
 	if jwtToken == "" {
 		log.Println("Error getting JWT from header")
@@ -134,6 +134,57 @@ func (api *ApiServer) handleDocAuth(c *gin.Context) {
 		return
 	}
 	c.JSON(200, "Authorized")
+}
+
+func (api *ApiServer) handleEmpCreation(c *gin.Context) {
+	var createEmpRequest CreateEmpRequest
+	err := c.BindJSON(&createEmpRequest)
+	if err != nil {
+		log.Println("Error binding json for employee creation")
+		c.JSON(400, err)
+		return
+	}
+	err = api.store.CreateEmp(createEmpRequest)
+	if err != nil {
+		log.Println("Error creating employee in db")
+		c.JSON(500, err)
+		return
+	}
+	c.JSON(200, "Employee Created")
+}
+
+func (api *ApiServer) handleEmpLogin(c *gin.Context) {
+	var loginRequest EmpLoginRequest
+	err := c.BindJSON(&loginRequest)
+	if err != nil {
+		log.Println("Error binding json for employee login")
+		c.JSON(400, err)
+		return
+	}
+	hashedPassword, err := api.store.GetEmpPassword(loginRequest.EmpId)
+	if err != nil {
+		log.Println("Error getting employee password from db")
+		c.JSON(500, err)
+		return
+	}
+	if !MatchPasswords(loginRequest.Password, hashedPassword) {
+		log.Println("Error matching passwords")
+		c.JSON(401, "Unauthorized")
+		return
+	}
+
+	token, err := CreateJWT(loginRequest.EmpId)
+	if err != nil {
+		log.Println("Error creating JWT")
+		c.JSON(500, err)
+		return
+	}
+	c.SetCookie("token", token, 24*60*60, "/", "localhost", false, true)
+	c.JSON(200, DoctorLoginResponse{
+		Token:  token,
+		Number: loginRequest.EmpId,
+	},
+	)
 }
 
 func (api *ApiServer) handlePatientTransfer(c *gin.Context) {
@@ -183,13 +234,13 @@ func (api *ApiServer) handlePatientCreation(c *gin.Context) {
 		c.JSON(400, err)
 		return
 	}
-	err = api.store.CreatePatient(createPatientRequest)
+	pId, err := api.store.CreatePatient(createPatientRequest)
 	if err != nil {
 		log.Println("Error creating patient in db")
 		c.JSON(500, err)
 		return
 	}
-	c.JSON(200, "Patient Created")
+	c.JSON(200, pId)
 }
 
 func (api *ApiServer) handleAllPatients(c *gin.Context) {
@@ -367,6 +418,81 @@ func (api *ApiServer) handleNextAppointment(c *gin.Context) {
 	c.JSON(200, "Next Appointment Updated")
 }
 
+func (api *ApiServer) handleNewPending(c *gin.Context) {
+	err := api.handleJWT(c)
+	if err != nil {
+		log.Println("Error validating JWT for next appointment")
+		c.JSON(500, err)
+		return
+	}
+
+	var newPendingRequest PendingRequest
+	err = c.BindJSON(&newPendingRequest)
+	if err != nil {
+		log.Println("Error binding json for next appointment")
+		c.JSON(400, err)
+		return
+	}
+	err = api.store.CreatePending(newPendingRequest.PId, newPendingRequest.DocId)
+	if err != nil {
+		log.Println("Error creating pending in db")
+		c.JSON(500, err)
+		return
+	}
+	c.JSON(200, "Pending Created")
+}
+
+func (api *ApiServer) handleDeletePending(c *gin.Context) {
+	err := api.handleJWT(c)
+	if err != nil {
+		log.Println("Error validating JWT for next appointment")
+		c.JSON(500, err)
+		return
+	}
+
+	var deletePendingRequest PendingRequest
+	err = c.BindJSON(&deletePendingRequest)
+	if err != nil {
+		log.Println("Error binding json for next appointment")
+		c.JSON(400, err)
+		return
+	}
+	err = api.store.DeletePending(deletePendingRequest.PId)
+	if err != nil {
+		log.Println("Error deleting pending in db")
+		c.JSON(500, err)
+		return
+	}
+	c.JSON(200, "Pending Deleted")
+}
+
+func (api *ApiServer) handlePending(c *gin.Context) {
+	docIdParam := c.Param("doc_id")
+
+	docId, err := strconv.Atoi(docIdParam)
+	if err != nil {
+		log.Println("Error converting doc_id to int")
+		c.JSON(400, err)
+		return
+	}
+
+	err = api.handleJWT(c)
+	if err != nil {
+		log.Println("Error validating JWT for next appointment")
+		c.JSON(500, err)
+		return
+	}
+
+	pending, err := api.store.GetPending(docId)
+	if err != nil {
+		log.Println("Error getting pending from db")
+		c.JSON(500, err)
+		return
+	}
+
+	c.JSON(200, pending)
+}
+
 func (api *ApiServer) handleViewSource(c *gin.Context) {
 	c.Redirect(301, "https://github.com/newtoallofthis123/doc_cache/tree/main/backend")
 }
@@ -392,15 +518,19 @@ func (api *ApiServer) Start() error {
 	r.GET("/", api.handleHello)
 	r.GET("/doctors/:doc_id", api.handleGetDoctor)
 	r.GET("/patients/:p_id", api.handleGetPatient)
-	r.GET("/auth", api.handleDocAuth)
+	r.GET("/auth", api.handleAuth)
 	r.GET("/all", api.handleAllPatients)
 	r.GET("/search", api.handlePatientSearch)
 	r.GET("/source", api.handleViewSource)
+	r.GET("/pending/:doc_id", api.handlePending)
 
 	//# All The Post Routes
 	r.POST("/login", api.handleDoctorLogin)
+	r.POST("/emp/login", api.handleEmpLogin)
 	r.POST("/new/doctor", api.handleDoctorCreation)
 	r.POST("/new/patient", api.handlePatientCreation)
+	r.POST("/new/employee", api.handleEmpCreation)
+	r.POST("/pend", api.handleNewPending)
 
 	//# All The Put Routes
 	r.PUT("/update/:p_id", api.handlePatientUpdate)
@@ -410,6 +540,7 @@ func (api *ApiServer) Start() error {
 
 	//# All The Delete Routes
 	r.DELETE("/delete/:p_id", api.handlePatientDelete)
+	r.DELETE("/complete", api.handleDeletePending)
 
 	err = r.Run(api.listenAddr)
 	return err

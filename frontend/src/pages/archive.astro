@@ -1,0 +1,14 @@
+---
+import Auth from "../layouts/auth.astro";
+import CreateTable from "../components/table";
+
+if(Astro.cookies.get('token') == null){
+    return Astro.redirect('/auth/login')
+}
+---
+
+<Auth>
+    <div class="flex flex-col justify-center items-center py-10">
+        <CreateTable default_term="all" query={"all"} client:load />
+    </div>
+</Auth>

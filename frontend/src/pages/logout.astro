@@ -1,0 +1,9 @@
+---
+try{
+    Astro.cookies.delete('token')
+    return Astro.redirect('/')
+}
+catch(e){
+    console.log(e)
+}
+---

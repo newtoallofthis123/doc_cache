@@ -5,7 +5,13 @@ import CreateTable from "../../components/table";
 const { term } = Astro.params
 const query = term || ''
 
-const auth_token = Astro.cookies.get('token').value || ''
+let auth_token = ''
+if(Astro.cookies.get('token')) {
+    auth_token = Astro.cookies.get('token').value
+}
+else{
+    return Astro.redirect('/auth/login')
+}
 ---
 
 <Auth title={`Searching for ${query}`}>

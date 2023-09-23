@@ -1,7 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
+::selection{
+  background-color: rgba(82, 81, 81, 0.81);
+  color: #fff;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

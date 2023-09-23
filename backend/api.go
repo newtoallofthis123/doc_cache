@@ -243,6 +243,22 @@ func (api *ApiServer) handleJWT(c *gin.Context) error {
 
 func (api *ApiServer) handlePatientSearch(c *gin.Context) {
 	query := c.Query("q")
+	if query == "all" {
+		patients, err := api.store.GetAllPatients()
+		if err != nil {
+			log.Println("Error getting all patients from db")
+			c.JSON(500, err)
+		}
+
+		//reverse the patients array
+		for i := len(patients)/2 - 1; i >= 0; i-- {
+			opp := len(patients) - 1 - i
+			patients[i], patients[opp] = patients[opp], patients[i]
+		}
+
+		c.JSON(200, patients)
+		return
+	}
 	patients, err := api.store.SearchPatient(query)
 	if err != nil {
 		log.Println("Error searching for patient")

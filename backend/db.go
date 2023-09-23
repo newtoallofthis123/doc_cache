@@ -145,10 +145,7 @@ func (pq *DBInstance) GetDocPassword(docId int) (string, error) {
 // A small help function that checks if a doctor exists
 func (pq *DBInstance) doesDoctorExist(docId int) bool {
 	_, err := pq.GetDoctor(docId)
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 // CreatePatient Accepts a CreatePatientRequest struct and creates a new patient
@@ -230,7 +227,7 @@ func (pq *DBInstance) SearchPatient(query string) ([]Patient, error) {
 	for _, patient := range patients {
 		patientString := fmt.Sprintf("%v", patient)
 		//remove all the -, :, _ and lowercase the string
-		patientString = strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(patientString, "-", ""), ":", ""), "_", ""))
+		patientString = strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(patientString, "-", ""), ":", ""), "{", ""))
 		if strings.Contains(patientString, query) {
 			results = append(results, patient)
 		}

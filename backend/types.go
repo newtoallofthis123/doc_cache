@@ -101,3 +101,19 @@ type PendingRequest struct {
 	PId   string `json:"p_id"`
 	DocId int    `json:"doc_id"`
 }
+
+type TransactionRequest struct {
+	EmpId  int    `json:"emp_id"`
+	Reason string `json:"reason"`
+	Amount int    `json:"amount"`
+	Flow   bool   `json:"flow"`
+}
+
+type Transaction struct {
+	TransactionId int       `json:"transaction_id"`
+	EmpId         int       `json:"emp_id"`
+	Reason        string    `json:"reason"`
+	Amount        int       `json:"amount"`
+	Flow          bool      `json:"flow"`
+	CreatedAt     time.Time `json:"created_at"`
+}

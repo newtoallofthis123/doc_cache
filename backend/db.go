@@ -11,22 +11,35 @@ import (
 
 type Store interface {
 	Init() error
+
+	// Doctors
 	CreateDoctor(doc CreateDoctorRequest) error
 	GetDoctor(docId int) (Doctor, error)
 	GetDocPassword(docId int) (string, error)
+
+	// Employees
 	CreateEmp(emp CreateEmpRequest) error
 	GetEmp(empId int) (Emp, error)
 	GetEmpPassword(empId int) (string, error)
 	DeleteEmp(empID int) error
+
+	// Patients
 	CreatePatient(patient CreatePatientRequest) (string, error)
 	GetPatient(pId string) (Patient, error)
 	GetAllPatients() ([]Patient, error)
 	SearchPatient(query string) ([]Patient, error)
 	DeletePatient(pId string) error
 	UpdatePatient(pId string, patient Patient) error
+
+	// Pending
 	CreatePending(pId string, docId int) error
 	DeletePending(pId string) error
 	GetPending(docId int) ([]Patient, error)
+
+	// Transactions
+	CreateTransaction(transaction TransactionRequest) error
+	GetTransaction(t_id int) (Transaction, error)
+	GetAllTransactions() ([]Transaction, error)
 }
 
 type DBInstance struct {
@@ -112,6 +125,22 @@ func (pq *DBInstance) createTable() error {
 	`
 
 	_, err = pq.Db.Exec(pendingQuery)
+	if err != nil {
+		return err
+	}
+
+	financesQuery := `
+	CREATE TABLE IF NOT EXISTS finances (
+	    		transaction_id SERIAL PRIMARY KEY,
+	    		emp_id INT REFERENCES employees(emp_id),
+	    		reason TEXT NOT NULL,
+	    		flow BOOLEAN NOT NULL,
+	    		amount INT NOT NULL,
+	    		created_at TIMESTAMP DEFAULT NOW()
+	    );
+	`
+
+	_, err = pq.Db.Exec(financesQuery)
 	if err != nil {
 		return err
 	}
@@ -464,4 +493,62 @@ func (pq *DBInstance) GetPending(docId int) ([]Patient, error) {
 	defer rows.Close()
 
 	return pendingPatients, nil
+}
+
+func (pq *DBInstance) CreateTransaction(transaction TransactionRequest) error {
+	if !pq.doesEmployeeExist(transaction.EmpId) {
+		return fmt.Errorf("employee with id %d doesn't exist", transaction.EmpId)
+	}
+
+	query := `
+	INSERT INTO finances (emp_id, reason, flow, amount)
+	VALUES ($1, $2, $3, $4)
+	`
+
+	_, err := pq.Db.Exec(query, transaction.EmpId, transaction.Reason, transaction.Flow, transaction.Amount)
+	return err
+}
+
+func (pq *DBInstance) GetTransaction(t_id int) (Transaction, error) {
+	query := `
+	SELECT * FROM finances WHERE transaction_id = $1
+	`
+
+	row := pq.Db.QueryRow(query, t_id)
+	var transaction Transaction
+
+	err := row.Scan(&transaction.TransactionId, &transaction.EmpId, &transaction.Reason, &transaction.Flow, &transaction.Amount, &transaction.CreatedAt)
+	if err != nil {
+		return Transaction{}, err
+	}
+
+	return transaction, nil
+}
+
+func (pq *DBInstance) GetAllTransactions() ([]Transaction, error) {
+	query := `
+	SELECT * FROM finances
+	`
+
+	rows, err := pq.Db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	var transactions []Transaction
+
+	for rows.Next() {
+		var transaction Transaction
+		var id int
+		var createdAt string
+
+		err := rows.Scan(&id, &transaction.EmpId, &transaction.Reason, &transaction.Flow, &transaction.Amount, &createdAt)
+		if err != nil {
+			return nil, err
+		}
+
+		transactions = append(transactions, transaction)
+	}
+
+	return transactions, nil
 }

@@ -493,6 +493,75 @@ func (api *ApiServer) handlePending(c *gin.Context) {
 	c.JSON(200, pending)
 }
 
+func (api *ApiServer) handleNewTransaction(c *gin.Context) {
+	err := api.handleJWT(c)
+	if err != nil {
+		log.Println("Error validating JWT for next appointment")
+		c.JSON(500, err)
+		return
+	}
+
+	var transactionRequest TransactionRequest
+	err = c.BindJSON(&transactionRequest)
+	if err != nil {
+		log.Println("Error binding json for next appointment")
+		c.JSON(400, err)
+		return
+	}
+	err = api.store.CreateTransaction(transactionRequest)
+	if err != nil {
+		log.Println("Error creating transaction in db")
+		c.JSON(500, err)
+		return
+	}
+	c.JSON(200, "Transaction Created")
+}
+
+func (api *ApiServer) handleViewAllTransactions(c *gin.Context) {
+	err := api.handleJWT(c)
+	if err != nil {
+		log.Println("Error validating JWT for next appointment")
+		c.JSON(500, err)
+		return
+	}
+
+	transactions, err := api.store.GetAllTransactions()
+	if err != nil {
+		log.Println("Error getting transactions from db")
+		c.JSON(500, err)
+		return
+	}
+
+	c.JSON(200, transactions)
+}
+
+func (api *ApiServer) handleViewTransaction(c *gin.Context) {
+	err := api.handleJWT(c)
+	if err != nil {
+		log.Println("Error validating JWT for next appointment")
+		c.JSON(500, err)
+		return
+	}
+
+	transactionIdParam := c.Param("transaction_id")
+
+	transactionId, err := strconv.Atoi(transactionIdParam)
+	if err != nil {
+		log.Println("Error converting transaction_id to int")
+		c.JSON(400, err)
+		return
+	}
+
+	transaction, err := api.store.GetTransaction(transactionId)
+	if err != nil {
+		log.Println("Error getting transaction from db")
+		c.JSON(500, err)
+		return
+	}
+
+	c.JSON(200, transaction)
+}
+
 func (api *ApiServer) handleViewSource(c *gin.Context) {
 	c.Redirect(301, "https://github.com/newtoallofthis123/doc_cache/tree/main/backend")
 }
@@ -523,6 +592,8 @@ func (api *ApiServer) Start() error {
 	r.GET("/search", api.handlePatientSearch)
 	r.GET("/source", api.handleViewSource)
 	r.GET("/pending/:doc_id", api.handlePending)
+	r.GET("/transactions", api.handleViewAllTransactions)
+	r.GET("/transactions/:transaction_id", api.handleViewTransaction)
 
 	//# All The Post Routes
 	r.POST("/login", api.handleDoctorLogin)
@@ -531,6 +602,7 @@ func (api *ApiServer) Start() error {
 	r.POST("/new/patient", api.handlePatientCreation)
 	r.POST("/new/employee", api.handleEmpCreation)
 	r.POST("/pend", api.handleNewPending)
+	r.POST("/new/transaction", api.handleNewTransaction)
 
 	//# All The Put Routes
 	r.PUT("/update/:p_id", api.handlePatientUpdate)

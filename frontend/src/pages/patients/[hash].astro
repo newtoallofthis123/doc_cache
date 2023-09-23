@@ -2,6 +2,7 @@
 import Auth from "../../layouts/auth.astro";
 import Payment from "../../components/small/payment";
 import DeletePatient from "../../components/small/delete";
+import Appointment from "../../components/small/appointment";
 import {Button} from "@/components/ui/button"
 
 
@@ -42,13 +43,16 @@ const doc = doc_res.full_name
             <h1 class="font-heading text-3xl mb-2">
                 Patient <span class="bg-gray-200">{data.p_id}</span>
             </h1>
-            {
-                !data.paid && (
-                            <p class="text-gray-600">
-                                {data.full_name} has not paid the fees yet.
-                            </p>
-                )
-            }
+            <p>
+                {' '}<span class="text-base font-sans">{!data.paid && '💵 Pending | '}</span>
+                {
+                    data.next_appointment > data.created_at && (
+                                <span class="text-gray-600">
+                                    📅 Next appointment: {new Date(data.next_appointment).toDateString()}. | ➡️ In {Math.floor((new Date(data.next_appointment).getTime() - new Date().getTime()) / (1000 * 3600 * 24))} days.
+                                </span>
+                    )
+                }
+            </p>
             <div class="mt-4 text-lg border-2 gap-y-3 grid border-r-4 border-b-4 border-neutral-800 p-4 rounded-lg shadow-lg">
                 <h3>
                     {data.gender == "Male"? "👨" : "👧"}<span class="font-bold">Name:</span>{' '} <span>{data.full_name}</span>
@@ -108,11 +112,11 @@ const doc = doc_res.full_name
             </div>
             <div class="grid gap-y-2">
                 <Payment patient={data} client:load />
-                <Button className="text-xl px-3 py-6 w-4/5" client:load>🕛 Set Appointment</Button>
+                <Appointment token={Astro.cookies.get('token')?.value || ''} patient={data} client:load />
             </div>
             <div class="grid gap-y-2">
-                <Button className="text-xl px-3 py-6 w-4/5" client:load>🧑‍⚕️ Transfer Doctor️</Button>
-                <Button className="text-xl px-3 py-6 w-4/5" client:load>🖨️ Print Receipt</Button>
+                <Button variant="disable" className="text-xl px-3 py-6 w-4/5" client:load>🧑‍⚕️ Transfer Doctor️</Button>
+                <Button variant="disable" className="text-xl px-3 py-6 w-4/5" client:load>🖨️ Print Receipt</Button>
             </div>
         </div>
     </div>

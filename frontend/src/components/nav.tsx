@@ -2,8 +2,7 @@ import { Button } from "@/components/ui/button"
 import {Input} from "@/components/ui/input";
 
 export default function Nav({
-    auth = false,
-    title = 'DocCache',}) {
+    auth = false}) {
     return (
         <>
             <nav>
@@ -29,7 +28,7 @@ export default function Nav({
                     <div className="gap-x-10">
                         <ul className="gap-x-8 flex flex-row">
                             {[
-                                'about',
+                                'doctors',
                                 'dashboard',
                                 'payments',
                                 'archive',

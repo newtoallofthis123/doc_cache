@@ -153,6 +153,23 @@ func (api *ApiServer) handleEmpCreation(c *gin.Context) {
 	c.JSON(200, "Employee Created")
 }
 
+func (api *ApiServer) handleEmpGet(c *gin.Context) {
+	empId := c.Param("emp_id")
+	empIdInt, err := strconv.Atoi(empId)
+	if err != nil {
+		log.Println("Error converting emp_id to int")
+		c.JSON(400, err)
+		return
+	}
+	emp, err := api.store.GetEmp(empIdInt)
+	if err != nil {
+		log.Println("Error getting emp from db")
+		c.JSON(500, err)
+		return
+	}
+	c.JSON(200, emp)
+}
+
 func (api *ApiServer) handleEmpLogin(c *gin.Context) {
 	var loginRequest EmpLoginRequest
 	err := c.BindJSON(&loginRequest)
@@ -587,6 +604,7 @@ func (api *ApiServer) Start() error {
 	r.GET("/", api.handleHello)
 	r.GET("/doctors/:doc_id", api.handleGetDoctor)
 	r.GET("/patients/:p_id", api.handleGetPatient)
+	r.GET("/emp/:emp_id", api.handleEmpGet)
 	r.GET("/auth", api.handleAuth)
 	r.GET("/all", api.handleAllPatients)
 	r.GET("/search", api.handlePatientSearch)
@@ -605,7 +623,7 @@ func (api *ApiServer) Start() error {
 	r.POST("/new/transaction", api.handleNewTransaction)
 
 	//# All The Put Routes
-	r.PUT("/update/:p_id", api.handlePatientUpdate)
+	r.POST("/update/:p_id", api.handlePatientUpdate)
 	r.PUT("/paid/:p_id", api.handleUserPaid)
 	r.PUT("/next_appointment", api.handleNextAppointment)
 	r.PUT("/transfer", api.handlePatientTransfer)

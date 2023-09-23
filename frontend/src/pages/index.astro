@@ -3,7 +3,25 @@ import Base from "../layouts/base.astro";
 ---
 
 <Base>
-	<h1 class="text-xl">
-		hello!
-	</h1>
+	<div class="p-4">
+		<div class="flex flex-col md:flex-row justify-center">
+			<div class="w-3/5 pl-2">
+				<div class="text-xl">
+					<h1 class="text-5xl font-heading font-bold pt-6 py-2">
+						Hospital Management
+					</h1>
+					<p class="text-2xl py-2">Done right.</p>
+				</div>
+			</div>
+			<div class="w-2/5">
+				<img
+					width="162"
+					height="162"
+					class="w-full"
+					src="/okay.svg"
+					alt="NoobScience Logo"
+				/>
+			</div>
+		</div>
+	</div>
 </Base>

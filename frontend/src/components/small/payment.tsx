@@ -25,12 +25,15 @@ export default function Payment({patient}:any) {
                             This action cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
-                        <div>
+                        <div className='grid grid-y-3'>
                             <p>
                                 <span className="font-bold">Name: </span> {patient.full_name}
                             </p>
                             <p>
                                 <span className="font-bold">Last Visit:</span> {new Date(patient.created_at).toDateString()}
+                            </p>
+                            <p>
+                                <span className="font-bold">Amount Due:</span> ₹{patient.payment}
                             </p>
                         </div>
                     <DialogFooter>

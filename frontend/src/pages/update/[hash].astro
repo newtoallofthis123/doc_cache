@@ -1,0 +1,56 @@
+---
+import Auth from "../../layouts/auth.astro";
+import UpdateForm from "../../components/small/update_form";
+
+
+const {hash} = Astro.params
+
+if(Astro.cookies.get('token') == null){
+    return Astro.redirect('/auth/login')
+}
+
+const res = await fetch(`http://localhost:2468/patients/${hash}`, {
+    method: 'GET',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': Astro.cookies.get('token')?.value || ''
+    }
+})
+
+const data = await res.json()
+if(data == null){
+    return Astro.redirect('/404')
+}
+
+const patient = {
+    full_name: data.full_name,
+    age: data.age,
+    gender: data.gender,
+    p_id: hash,
+    payment: data.payment,
+    phone:  data.phone,
+    doc_id: data.doc_id,
+    problems: data.problems,
+    diagnosis: data.diagnosis,
+    medicines: data.medicines,
+    description: data.description,
+    paid: data.paid,
+    next_appointment: data.next_appointment,
+    created_at: data.created_at,
+}
+
+const doc_id = data.doc_id
+const doc_res = await fetch(`http://localhost:2468/doctors/${doc_id}`, {
+    method: 'GET',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': Astro.cookies.get('token')?.value || ''
+    }
+}).then((res) => res.json())
+
+const doc = doc_res.full_name
+---
+
+<Auth title={"Patient " + data.full_name + " | DocCache"}>
+    <UpdateForm patient_raw={patient} doctor={doc} token={Astro.cookies.get('token')?.value} client:load />
+</Auth>

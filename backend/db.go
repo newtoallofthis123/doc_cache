@@ -131,7 +131,7 @@ func (pq *DBInstance) createTable() error {
 
 	financesQuery := `
 	CREATE TABLE IF NOT EXISTS finances (
-	    		transaction_id SERIAL PRIMARY KEY,
+	    		tranc_id SERIAL PRIMARY KEY NOT NULL,
 	    		emp_id INT REFERENCES employees(emp_id),
 	    		reason TEXT NOT NULL,
 	    		flow BOOLEAN NOT NULL,
@@ -509,12 +509,12 @@ func (pq *DBInstance) CreateTransaction(transaction TransactionRequest) error {
 	return err
 }
 
-func (pq *DBInstance) GetTransaction(t_id int) (Transaction, error) {
+func (pq *DBInstance) GetTransaction(tId int) (Transaction, error) {
 	query := `
-	SELECT * FROM finances WHERE transaction_id = $1
+	SELECT * FROM finances WHERE tranc_id = $1
 	`
 
-	row := pq.Db.QueryRow(query, t_id)
+	row := pq.Db.QueryRow(query, tId)
 	var transaction Transaction
 
 	err := row.Scan(&transaction.TransactionId, &transaction.EmpId, &transaction.Reason, &transaction.Flow, &transaction.Amount, &transaction.CreatedAt)
@@ -539,10 +539,8 @@ func (pq *DBInstance) GetAllTransactions() ([]Transaction, error) {
 
 	for rows.Next() {
 		var transaction Transaction
-		var id int
-		var createdAt string
 
-		err := rows.Scan(&id, &transaction.EmpId, &transaction.Reason, &transaction.Flow, &transaction.Amount, &createdAt)
+		err := rows.Scan(&transaction.TransactionId, &transaction.EmpId, &transaction.Reason, &transaction.Flow, &transaction.Amount, &transaction.CreatedAt)
 		if err != nil {
 			return nil, err
 		}

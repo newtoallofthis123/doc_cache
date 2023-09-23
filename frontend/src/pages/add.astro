@@ -1,0 +1,27 @@
+---
+import Auth from "../layouts/auth.astro";
+import AddForm from "../components/small/add_form";
+
+if (Astro.cookies.get('token') == null) {
+    return Astro.redirect('/auth/login');
+}
+const doc_id = Astro.cookies.get('doc')?.value || ''
+const doc_res = await fetch(`http://localhost:2468/doctors/${doc_id}`, {
+    method: 'GET',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': Astro.cookies.get('token')?.value || ''
+    }
+}).then((res) => res.json())
+
+const doc = {
+    "name": String(doc_res.full_name),
+    "number": parseInt(doc_id),
+}
+---
+
+<Auth>
+    <div class="flex flex-col justify-center items-center p-5">
+        <AddForm size="wide" token={Astro.cookies.get('token')?.value || ''} doc={doc} client:load />
+    </div>
+</Auth>

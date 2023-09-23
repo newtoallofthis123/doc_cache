@@ -110,7 +110,7 @@ type TransactionRequest struct {
 }
 
 type Transaction struct {
-	TransactionId int       `json:"transaction_id"`
+	TransactionId int       `json:"tranc_id "`
 	EmpId         int       `json:"emp_id"`
 	Reason        string    `json:"reason"`
 	Amount        int       `json:"amount"`

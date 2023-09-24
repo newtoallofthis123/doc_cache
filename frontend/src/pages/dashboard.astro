@@ -6,8 +6,7 @@ import AddForm from '../components/small/add_form';
 if (Astro.cookies.get('token') == null) {
     return Astro.redirect('/auth/login');
 }
-const doc_id = Astro.cookies.get('doc')?.value || ''
-const doc_res = await fetch(`http://localhost:2468/doctors/${doc_id}`, {
+const doc_res = await fetch(`http://localhost:2468/doctors`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -15,17 +14,23 @@ const doc_res = await fetch(`http://localhost:2468/doctors/${doc_id}`, {
         }
     }).then((res) => res.json())
 
-const doc = {
-    "name": String(doc_res.full_name),
-    "number": parseInt(doc_id),
-}
+//add all docs to docs
+let docs:any = []
+doc_res.forEach((doc:any) => {
+    docs.push(
+        {
+            "full_name": doc.full_name,
+            "docID": doc.doc_id
+        }
+    )
+})
 ---
 
 <Auth title="DashBoard | DocCache">
     <div class="grid grid-cols-2 gap-4">
         <div class="col-span-1 mx-5 my-8">
             <div class="w-full border-2 border-neutral-700 rounded-lg">
-                <AddForm token={Astro.cookies.get('token')?.value || ''} doc={doc} client:load />
+                <AddForm token={Astro.cookies.get('token')?.value || ''} size='small' docs={docs} client:load />
             </div>
         </div>
         <div class="col-span-1">

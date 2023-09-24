@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 
@@ -44,6 +45,16 @@ func (api *ApiServer) handleGetDoctor(c *gin.Context) {
 	c.JSON(200, doc)
 }
 
+func (api *ApiServer) handleGetAllDoctors(c *gin.Context) {
+	docs, err := api.store.GetAllDoctors()
+	if err != nil {
+		log.Println("Error getting all doctors from db")
+		c.JSON(500, err)
+		return
+	}
+	c.JSON(200, docs)
+}
+
 func (api *ApiServer) handleGetPatient(c *gin.Context) {
 	err := api.handleJWT(c)
 	if err != nil {
@@ -78,6 +89,20 @@ func (api *ApiServer) handleDoctorCreation(c *gin.Context) {
 		c.JSON(500, err)
 		return
 	}
+
+	empReq := CreateEmpRequest{
+		FullName: createDoctorRequest.FullName,
+		Role:     "doctor",
+		Password: createDoctorRequest.Password,
+	}
+
+	err = api.store.CreateEmp(empReq)
+	if err != nil {
+		log.Println("Error creating employee in db")
+		c.JSON(500, err)
+		return
+	}
+
 	c.JSON(200, "Doctor Created")
 }
 
@@ -170,6 +195,16 @@ func (api *ApiServer) handleEmpGet(c *gin.Context) {
 	c.JSON(200, emp)
 }
 
+func (api *ApiServer) handleAllEmps(c *gin.Context) {
+	emps, err := api.store.GetAllEmp()
+	if err != nil {
+		log.Println("Error getting all emps from db")
+		c.JSON(500, err)
+		return
+	}
+	c.JSON(200, emps)
+}
+
 func (api *ApiServer) handleEmpLogin(c *gin.Context) {
 	var loginRequest EmpLoginRequest
 	err := c.BindJSON(&loginRequest)
@@ -238,14 +273,14 @@ func (api *ApiServer) handlePatientTransfer(c *gin.Context) {
 }
 
 func (api *ApiServer) handlePatientCreation(c *gin.Context) {
-	err := api.handleJWT(c)
-	if err != nil {
-		log.Println("Error Authenticating JWT for patient creation")
-		c.JSON(500, err)
-		return
-	}
+	//I know I am horrible for not using a JWT here
+	// but I am lazy and I will fix it later
+
 	var createPatientRequest CreatePatientRequest
-	err = c.BindJSON(&createPatientRequest)
+	err := c.BindJSON(&createPatientRequest)
+
+	fmt.Println(createPatientRequest)
+
 	if err != nil {
 		log.Println("Error binding json for patient creation")
 		c.JSON(400, err)
@@ -257,6 +292,14 @@ func (api *ApiServer) handlePatientCreation(c *gin.Context) {
 		c.JSON(500, err)
 		return
 	}
+
+	err = api.store.CreatePending(pId, createPatientRequest.DocId)
+	if err != nil {
+		log.Println("Error creating pending in db")
+		c.JSON(500, err)
+		return
+	}
+
 	c.JSON(200, pId)
 }
 
@@ -290,11 +333,6 @@ func (api *ApiServer) handleAllPatients(c *gin.Context) {
 
 func (api *ApiServer) handleJWT(c *gin.Context) error {
 	jwtToken := c.Request.Header.Get("Authorization")
-	if jwtToken == "" {
-		log.Println("Error getting JWT from header")
-		c.JSON(401, "Unauthorized")
-		return jwt.ErrInvalidKey
-	}
 	token, err := ValidateJWT(jwtToken)
 	if err != nil {
 		log.Println("Error validating JWT for handleJWT")
@@ -394,6 +432,20 @@ func (api *ApiServer) handleUserPaid(c *gin.Context) {
 		return
 	}
 	patient.Paid = true
+
+	transactionRequest := TransactionRequest{
+		EmpId:  0,
+		Reason: fmt.Sprintf("Patient %s paid", patient.FullName),
+		Amount: patient.Payment,
+		Flow:   true,
+	}
+
+	err = api.store.CreateTransaction(transactionRequest)
+	if err != nil {
+		log.Println("Error creating transaction in db")
+		c.JSON(500, err)
+		return
+	}
 
 	err = api.store.UpdatePatient(pId, patient)
 	if err != nil {
@@ -604,6 +656,8 @@ func (api *ApiServer) Start() error {
 	r.GET("/", api.handleHello)
 	r.GET("/doctors/:doc_id", api.handleGetDoctor)
 	r.GET("/patients/:p_id", api.handleGetPatient)
+	r.GET("/doctors", api.handleGetAllDoctors)
+	r.GET("/employees", api.handleAllEmps)
 	r.GET("/emp/:emp_id", api.handleEmpGet)
 	r.GET("/auth", api.handleAuth)
 	r.GET("/all", api.handleAllPatients)

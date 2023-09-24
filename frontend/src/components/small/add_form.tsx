@@ -4,18 +4,28 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import Toastify from 'toastify-js';
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 type Props = {
-    doc: {
-        name: string;
-        number: number;
-    };
+    docs: {
+        full_name: string;
+        docID: number;
+    }[];
     token: string;
     size: string;
 };
 
-export default function AddForm({ doc, token, size="small" }: Props) {
+export default function AddForm({ docs, token, size = 'small' }: Props) {
     const [name, setName] = React.useState('');
+    const [doc_id, setDocID] = React.useState<number>();
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -26,21 +36,25 @@ export default function AddForm({ doc, token, size="small" }: Props) {
         patient.age = parseInt(patient.age);
         //doc_id is a number
         //@ts-ignore
-        patient.doc_id = parseInt(patient.doc_id);
+        patient.doc_id = parseInt(doc_id);
         //payments is a number
         //@ts-ignore
         patient.payment = parseInt(patient.payment);
+        patient.token = token;
 
-        const res = await fetch('http://localhost:2468/new/patient', {
+        const res = await fetch('/api/add', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `${token}`,
+                'Authorization': `${token}`,
             },
+            mode: 'no-cors',
             body: JSON.stringify(patient),
-        }).then((res) => res.json()).catch((err) => console.log(err));
+        })
+            .then((res) => res.json())
+            .catch((err) => console.log(err));
 
-        if (res == "Patient Created") {
+        if (res == 'Patient Created') {
             Toastify({
                 text: 'Patient Created Successfully!',
                 duration: 3000,
@@ -48,7 +62,7 @@ export default function AddForm({ doc, token, size="small" }: Props) {
                 position: 'right',
                 style: {
                     background: '#d0fdba',
-                }
+                },
             }).showToast();
         } else {
             Toastify({
@@ -58,23 +72,21 @@ export default function AddForm({ doc, token, size="small" }: Props) {
                 position: 'right',
                 style: {
                     background: '#f9a8a8',
-                }
+                },
             }).showToast();
         }
-        
-        typeof window !== 'undefined' && window.location.replace(`/patient/${String(res)}`);
+
+        typeof window !== 'undefined' && window.location.replace(`/patients/${String(res)}`);
     }
 
     return (
         <form
             onSubmit={handleSubmit}
-            className={`rounded-xl ${size == "wide" && 'w-2/3'} shadow-xl`}
+            className={`rounded-xl ${size == 'wide' && 'w-2/3'} shadow-xl`}
         >
             <div className="flex flex-row justify-between bg-neutral-900 text-white w-full px-6 pb-2 pt-4 m-0 rounded-t-md">
                 <h1 className="text-xl font-bold">Add a Patient Record</h1>
-                <p className="pt-1 pb-2 text-neutral-100">
-                    {name} {doc && ` treated by ${doc.name}`}
-                </p>
+                <p className="pt-1 pb-2 text-neutral-100">{name}</p>
             </div>
             <div className="grid gap-y-5 py-2 px-8 ">
                 <div className="flex flex-row justify-center pt-2 items-center">
@@ -158,20 +170,33 @@ export default function AddForm({ doc, token, size="small" }: Props) {
                     </div>
                 </div>
                 <div className="flex flex-row justify-center items-center px-2">
-                    <Label className="w-1/5 text-base" htmlFor="doc_id">
-                        Doctor ID:
+                    <Label className="w-1/5 text-base" htmlFor="problems">
+                        Doctor:
                     </Label>
-                    <Input
-                        readOnly
-                        required
-                        defaultValue={doc.number}
-                        id="doc_id"
-                        name="doc_id"
-                        autoComplete="off"
-                        className="border-2 border-neutral-200 bg-white w-4/5"
-                        type="text"
-                        placeholder={doc.name}
-                    />
+                    <Select
+                        onValueChange={(val) => {
+                            setDocID(parseInt(val));
+                        }}
+                    >
+                        <SelectTrigger className="w-4/5">
+                            <SelectValue placeholder="Choose an available doctor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectLabel>Available Doctors</SelectLabel>
+                                {docs.map((doc) => {
+                                    return (
+                                        <SelectItem
+                                            key={doc.docID}
+                                            value={String(doc.docID)}
+                                        >
+                                            {doc.full_name}
+                                        </SelectItem>
+                                    );
+                                })}
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="flex flex-row justify-center items-center px-2">
                     <Label className="w-1/5 text-base" htmlFor="problems">

@@ -2,18 +2,18 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import type { FormEvent } from 'react';
 
-export default function Login() {
+export default function EmpLogin() {
     async function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        const doc_id = parseInt(e.currentTarget.doc_id.value);
+        const emp_id = parseInt(e.currentTarget.emp_id.value);
         const password = e.currentTarget.password.value;
-        await fetch('http://localhost:2468/login', {
+        await fetch('http://localhost:2468/emp/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                doc_id: doc_id,
+                emp_id: emp_id,
                 password: password,
             }),
         })
@@ -24,9 +24,9 @@ export default function Login() {
                     typeof window !== 'undefined' &&
                         (document.cookie = `token=${data.token}; path=/;`);
                     typeof window !== 'undefined' &&
-                        (document.cookie = `doc=${data.number}; path=/;`);
+                        (document.cookie = `emp=${data.number}; path=/;`);
                     typeof window !== 'undefined' &&
-                    (document.cookie = `type=doc; path=/;`);
+                    (document.cookie = `type=emp; path=/;`);
                     typeof window !== 'undefined' &&
                         (window.location.href = '/');
                 }
@@ -41,8 +41,8 @@ export default function Login() {
                 <Input
                     type='number'
                     autoComplete='off'
-                    name="doc_id"
-                    placeholder="Enter Your Doc ID"
+                    name="emp_id"
+                    placeholder="Enter Your Emp ID"
                     className="text-lg p-2 border-neutral-800 mb-4"
                 />
                 <Input

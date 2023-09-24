@@ -19,7 +19,7 @@ type Patient = {
     full_name: string,
     age: number,
     gender: string,
-    p_id: number,
+    p_id: string,
     payment: number,
     phone:  string,
     doc_id: number,
@@ -34,7 +34,7 @@ type Patient = {
 
 export default function UpdateForm({ patient_raw, doctor, token, size="small" }: Props) {
     const [patient, setPatient] = React.useState(patient_raw);
-
+    
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         const data = new FormData(e.currentTarget);
@@ -49,13 +49,13 @@ export default function UpdateForm({ patient_raw, doctor, token, size="small" }:
         //@ts-ignore
         patient.payment = parseInt(patient.payment);
 
-        console.log(token);
+        patient.p_id = patient_raw.p_id;
+        patient.token = token;
 
-        const res = await fetch(`http://localhost:2468/update/${patient_raw.p_id}`, {
+        const res = await fetch(`/api/update`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': token,
             },
             body: JSON.stringify(patient),
             mode: 'no-cors',

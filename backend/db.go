@@ -16,12 +16,14 @@ type Store interface {
 	CreateDoctor(doc CreateDoctorRequest) error
 	GetDoctor(docId int) (Doctor, error)
 	GetDocPassword(docId int) (string, error)
+	GetAllDoctors() ([]Doctor, error)
 
 	// Employees
 	CreateEmp(emp CreateEmpRequest) error
 	GetEmp(empId int) (Emp, error)
 	GetEmpPassword(empId int) (string, error)
 	DeleteEmp(empID int) error
+	GetAllEmp() ([]Emp, error)
 
 	// Patients
 	CreatePatient(patient CreatePatientRequest) (string, error)
@@ -117,8 +119,8 @@ func (pq *DBInstance) createTable() error {
 
 	pendingQuery := `
 	CREATE TABLE IF NOT EXISTS pending (
-	    		id SERIAL PRIMARY KEY,
-	    		p_id TEXT REFERENCES patients(p_id),
+	    		id SERIAL UNIQUE PRIMARY KEY,
+	    		p_id TEXT REFERENCES patients(p_id) ON DELETE CASCADE,
 	    		doc_id INT REFERENCES doctors(doc_id),
 	    		created_at TIMESTAMP DEFAULT NOW()
 	    );
@@ -173,7 +175,7 @@ func (pq *DBInstance) CreateDoctor(doc CreateDoctorRequest) error {
 }
 
 // GetDoctor Accepts a docId and returns a Doctor struct
-func (pq DBInstance) GetDoctor(docId int) (Doctor, error) {
+func (pq *DBInstance) GetDoctor(docId int) (Doctor, error) {
 	query := `
 	SELECT * FROM doctors WHERE doc_id = $1
 	`
@@ -191,6 +193,29 @@ func (pq DBInstance) GetDoctor(docId int) (Doctor, error) {
 		return Doctor{}, err
 	}
 	return doc, nil
+}
+
+func (pq *DBInstance) GetAllDoctors() ([]Doctor, error) {
+	query := `
+	SELECT * FROM doctors
+	`
+	var doctors []Doctor
+	rows, err := pq.Db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var doc Doctor
+		hashedPassword := ""
+		err := rows.Scan(&doc.DocId, &doc.FullName, &doc.GovId, &hashedPassword, &doc.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		doctors = append(doctors, doc)
+	}
+
+	return doctors, nil
 }
 
 func (pq *DBInstance) GetDocPassword(docId int) (string, error) {
@@ -311,6 +336,17 @@ func (pq *DBInstance) DeletePatient(pId string) error {
 		return err
 	}
 
+	//Delete all the pending requests
+
+	delQuery := `
+	DELETE FROM pending WHERE p_id = $1
+	`
+
+	_, err = pq.Db.Exec(delQuery, pId)
+	if err != nil {
+		return err
+	}
+
 	query := `
 	DELETE FROM patients WHERE p_id = $1
 	`
@@ -400,6 +436,31 @@ func (pq DBInstance) GetEmp(empId int) (Emp, error) {
 		return Emp{}, err
 	}
 	return emp, nil
+}
+
+func (pq *DBInstance) GetAllEmp() ([]Emp, error) {
+	query := `
+	SELECT * FROM employees
+	`
+
+	rows, err := pq.Db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	var employees []Emp
+
+	for rows.Next() {
+		var emp Emp
+		hashedPassword := ""
+		err := rows.Scan(&emp.EmpId, &emp.FullName, &emp.Role, &hashedPassword, &emp.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		employees = append(employees, emp)
+	}
+
+	return employees, nil
 }
 
 func (pq *DBInstance) GetEmpPassword(empId int) (string, error) {
@@ -506,6 +567,8 @@ func (pq *DBInstance) CreateTransaction(transaction TransactionRequest) error {
 	`
 
 	_, err := pq.Db.Exec(query, transaction.EmpId, transaction.Reason, transaction.Flow, transaction.Amount)
+	fmt.Println(err)
+
 	return err
 }
 

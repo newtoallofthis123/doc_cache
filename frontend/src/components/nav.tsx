@@ -62,7 +62,7 @@ export default function Nav({
                     </div>
                     <div>
                         <Button className="text-lg px-2 py-5">
-                            {!auth && <a href="/auth/login">Login</a>}
+                            {!auth && <a href="/auth">Login</a>}
                             {auth && <a href="/logout">Logout</a>}
                         </Button>
                     </div>

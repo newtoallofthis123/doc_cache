@@ -29,7 +29,7 @@ export default  function DeletePatient({patient}:any) {
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                     onClick={() => {
-                        fetch(`/api/paid/${patient.p_id}`).then(() => {
+                        fetch(`/api/delete/${patient.p_id}`).then(() => {
                             typeof window !== "undefined" && window.location.replace(`/dashboard`);
                         }).catch(
                             (err) => {

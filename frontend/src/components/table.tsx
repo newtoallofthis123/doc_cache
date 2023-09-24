@@ -7,11 +7,14 @@ async function search_patients(term: string) {
     return await response.json();
 }
 
-export default function CreateTable({ query, default_term, small, number}: { query: string, default_term: string, small:boolean, number:number}) {
+export default function CreateTable({ title='', initial=[], query, default_term, small, number}: { title:string, initial:any, query: string, default_term: string, small:boolean, number:number}) {
     const [search, setSearch] = React.useState(query);
-    const [results, setResults] = React.useState([]);
+    const [results, setResults] = React.useState(initial);
 
     React.useEffect(() => {
+        if(search == 'display'){
+            return;
+        }
         search_patients(search).then((data) => {
             setResults(data);
         }
@@ -24,8 +27,10 @@ export default function CreateTable({ query, default_term, small, number}: { que
             return;
         }
         if (value == '') {
-            setResults([]);
-            setSearch(default_term);
+            setResults(initial);
+            if(default_term != ''){
+                setSearch(default_term);
+            }
             return;
         }
 
@@ -47,13 +52,18 @@ export default function CreateTable({ query, default_term, small, number}: { que
                     small?(
                         <h1 className="text-xl font-heading font-bold p-1 ml-2">Recent Records</h1>
                         ):(
-                        <h1 className="text-2xl font-bold p-1 ml-2">Results for "{search}" in the 🏥</h1>
+                        <h1 className="text-2xl font-bold p-1 ml-2">{
+                            (title != '')?(title):(`Results for "${search}" in the 🏥`)
+                        }</h1>
                     )
                 }
-                <div className="flex flex-row w-3/5 border-black border-2 rounded-2xl">
-                    <Input onChange={handleChange} type="search" placeholder="Start typing to search" className="border-0 focus-visible:ring-0 focus-visible:outline-none" />
+                <form onSubmit={(e) =>{
+                    e.preventDefault();
+                    typeof window !== "undefined" && (window.location.href = `/patients/${results[0].p_id}`);
+                }} className="flex flex-row w-3/5 border-black border-2 rounded-2xl">
+                    <Input onChange={handleChange} type="search" placeholder="Search for any patient in the database" className="border-0 focus-visible:ring-0 focus-visible:outline-none" />
                     <button className="px-3">🔍</button>
-                </div>
+                </form>
             </div>
             <div className="border-2 border-neutral-800 rounded-lg pt-0">
                 <table className="w-full">

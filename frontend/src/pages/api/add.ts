@@ -1,9 +1,10 @@
 import type { APIRoute } from 'astro';
+import { API_URL } from "@/constants";
 
 export const POST: APIRoute = async ({ request }) => {
     const data = await request.json();
 
-    const res = await fetch('http://localhost:2468/new/patient/', {
+    const res = await fetch(`${API_URL}/new/patient/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

@@ -3,12 +3,13 @@ package main
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/joho/godotenv"
-	"golang.org/x/crypto/bcrypt"
 	"math/big"
 	"os"
 	"time"
+
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func GetEnv() *Env {
@@ -20,6 +21,7 @@ func GetEnv() *Env {
 		Password:  os.Getenv("PASSWORD"),
 		User:      os.Getenv("USER"),
 		JwtSecret: os.Getenv("JWT_SECRET"),
+		Host:      os.Getenv("HOST"),
 	}
 	return env
 }

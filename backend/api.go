@@ -8,7 +8,6 @@ import (
 	jwt "github.com/golang-jwt/jwt/v4"
 
 	"github.com/gin-gonic/gin"
-	cors "github.com/rs/cors/wrapper/gin"
 )
 
 type ApiServer struct {
@@ -638,19 +637,19 @@ func (api *ApiServer) handleViewSource(c *gin.Context) {
 func (api *ApiServer) Start() error {
 	r := gin.Default()
 
-	config := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:4321"},
-		AllowedMethods: []string{"GET", "POST"},
+	// CORS
+	r.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+
 	})
-
-	// Use the CORS middleware
-	r.Use(config)
-
-	//! Will be used in production
-	err := r.SetTrustedProxies(nil)
-	if err != nil {
-		return err
-	}
 
 	//# All The Get Routes
 	r.GET("/", api.handleHello)
@@ -686,6 +685,7 @@ func (api *ApiServer) Start() error {
 	r.DELETE("/delete/:p_id", api.handlePatientDelete)
 	r.DELETE("/complete", api.handleDeletePending)
 
-	err = r.Run(api.listenAddr)
+	r.SetTrustedProxies(nil)
+	err := r.Run(api.listenAddr)
 	return err
 }

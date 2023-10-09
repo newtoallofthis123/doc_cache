@@ -1,15 +1,16 @@
 ---
 const {term} = Astro.params
+import { API_URL } from "@/constants";
 
 if(term == ''){
     return new Response(JSON.stringify(""))
 }
 
-const res = await fetch(`http://localhost:2468/search?q=${term}`, {
+const res = await fetch(`${API_URL}/search?q=${term}`, {
     method: 'GET',
     headers: {
         'Content-Type': 'application/json',
-        'Authorization': Astro.cookies.get('token').value || ''
+        'Authorization': Astro.cookies.get('token')?.value || ''
     }
 })
 

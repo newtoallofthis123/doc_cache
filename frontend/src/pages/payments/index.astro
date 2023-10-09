@@ -5,11 +5,11 @@ if (Astro.cookies.get('token') == null) {
     return Astro.redirect('/auth/login');
 }
 
-const res = await fetch('http://localhost:2468/transactions', {
+const res = await fetch('http://localhost:4321/api/transactions', {
     method: 'GET',
     headers: {
         'Content-Type': 'application/json',
-        'Authorization': Astro.cookies.get('token').value
+        'Authorization': Astro.cookies.get('token')?.value || ''
     }
 }).then(res => res.json()).catch(err => {
     console.log(err);
@@ -37,7 +37,7 @@ const transactions = res;
                     </thead>
                     <tbody class="w-full rounded-lg">
                     {
-                        transactions.length != 0 && transactions.map((transaction) => {
+                        transactions.length != 0 && transactions.map((transaction:any) => {
                             return (
                                 <tr class={`border-b-2 rounded-lg border-neutral-800 ${transaction.flow?'bg-green-100':'bg-red-100'}`}>
                                     <td class="py-3 px-2 text-center">{new Date(transaction.created_at).toLocaleTimeString() + " " + new Date(transaction.created_at).toDateString()}</td>

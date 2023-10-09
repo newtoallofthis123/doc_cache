@@ -8,28 +8,32 @@ if (!Astro.cookies.has('token')) {
     return Astro.redirect('/auth/login');
 }
 
-let type = "doctors"
+let type = "doctor"
 let id = hash
 let data = null
 
-const res = await fetch(`http://localhost:2468/${type}/${id}`, {
+const doc_res = await fetch(`http://localhost:4321/api/${type}`, {
     method: 'GET',
     headers: {
-        'Authorization': Astro.cookies.get('token').value
+        'Authorization': Astro.cookies.get('token')?.value || '',
+        'Content-Type': 'application/json',
+        'doc_id': id || ''
     }
 }).then(res => res.json()).catch((err)=>console.log(err))
 
-const patient_res = await fetch(`http://localhost:2468/all`, {
+const patient_res = await fetch(`http://localhost:4321/api/all`, {
     method: 'GET',
     headers: {
-        'Authorization': Astro.cookies.get('token').value
+        'Authorization': Astro.cookies.get('token')?.value || ''
     }
 }).then(res => res.json()).catch((err)=>console.log(err))
 
 //get all the patients with doc_id = id
-const patients = patient_res.filter((patient)=>patient.doc_id === parseInt(id))
+const patients = patient_res.filter((patient:any)=>patient.doc_id === parseInt(id || '0'))
 
-data = res
+data = doc_res
+
+console.log(doc_res)
 ---
 
 <Auth>

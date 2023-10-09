@@ -5,7 +5,7 @@ import AddForm from "../components/small/add_form";
 if (Astro.cookies.get('token') == null) {
     return Astro.redirect('/auth/login');
 }
-const doc_res = await fetch(`http://localhost:2468/doctors`, {
+const doc_res = await fetch(`http://localhost:4321/api/doctors`, {
     method: 'GET',
     headers: {
         'Content-Type': 'application/json',

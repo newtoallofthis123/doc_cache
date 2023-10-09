@@ -7,3 +7,4 @@
 /frontend/.next
 /*.zip
 /frontend/.vscode
+/frontend/dist

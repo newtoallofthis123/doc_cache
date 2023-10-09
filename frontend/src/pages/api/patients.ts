@@ -1,18 +1,15 @@
 import type { APIRoute } from 'astro';
 import { API_URL } from '@/constants';
 
-export const POST: APIRoute = async ({ request }) => {
-    const data = await request.json();
-
+export const GET: APIRoute = async ({ request }) => {
     const res = await fetch(
-        `${API_URL}/update/${data.p_id}`,
+        `${API_URL}/patients/${request.headers.get('p_id')}`,
         {
-            method: 'POST',
+            method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: data.token,
+                Authorization: request.headers.get('Authorization') || '',
             },
-            body: JSON.stringify(data),
         }
     )
         .then((res) => res.json())

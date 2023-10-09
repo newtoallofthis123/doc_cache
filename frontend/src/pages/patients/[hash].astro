@@ -12,11 +12,12 @@ if(Astro.cookies.get('token') == null){
     return Astro.redirect('/auth/login')
 }
 
-const res = await fetch(`http://localhost:2468/patients/${hash}`, {
+const res = await fetch(`http://localhost:4321/api/patients`, {
     method: 'GET',
     headers: {
         'Content-Type': 'application/json',
-        'Authorization': Astro.cookies.get('token')?.value || ''
+        'Authorization': Astro.cookies.get('token')?.value || '',
+        'p_id': hash || ''
     }
 })
 
@@ -26,15 +27,18 @@ if(data == null){
 }
 
 const doc_id = data.doc_id
-const doc_res = await fetch(`http://localhost:2468/doctors/${doc_id}`, {
+const doc_res = await fetch(`http://localhost:4321/api/doctor`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': Astro.cookies.get('token')?.value || ''
+            'Authorization': Astro.cookies.get('token')?.value || '',
+            'doc_id': doc_id || ''
         }
     }).then((res) => res.json())
 
 const doc = doc_res.full_name
+
+const appointment_time = Math.floor((new Date(data.next_appointment).getTime() - new Date().getTime()) / (1000 * 3600 * 24))
 ---
 
 <Auth title={"Patient " + data.full_name + " | DocCache"}>
@@ -46,10 +50,20 @@ const doc = doc_res.full_name
             <p>
                 {' '}<span class="text-base font-sans">{!data.paid && '💵 Pending | '}</span>
                 {
+                    appointment_time > 0 ? (
+                        <span>
+                            {
                     data.next_appointment > data.created_at && (
                                 <span class="text-gray-600">
-                                    📅 Next appointment: {new Date(data.next_appointment).toDateString()}. | ➡️ In {Math.floor((new Date(data.next_appointment).getTime() - new Date().getTime()) / (1000 * 3600 * 24))} days.
+                                    📅 Next appointment: {new Date(data.next_appointment).toDateString()}. | ➡️ {appointment_time} In days.
                                 </span>
+                    )
+                }    
+                        </span>
+                    ): (
+                        <span>
+                            ❗ Appointment Overdue by {Math.abs(appointment_time)} days.    
+                        </span>
                     )
                 }
             </p>
@@ -75,7 +89,7 @@ const doc = doc_res.full_name
                         {
                             data.problems.split(";").map((problem:any) => {
                                 return (
-                                        <li key={problem}>
+                                        <li>
                                             {problem}
                                         </li>
                                 )
@@ -95,7 +109,7 @@ const doc = doc_res.full_name
                         {
                             data.medicines.split(";").map((problem:any) => {
                                 return (
-                                        <li key={problem}>
+                                        <li>
                                             {problem}
                                         </li>
                                 )
@@ -115,8 +129,8 @@ const doc = doc_res.full_name
                 <Appointment token={Astro.cookies.get('token')?.value || ''} patient={data} client:load />
             </div>
             <div class="grid gap-y-2">
-                <Button variant="disable" className="text-xl px-3 py-6 w-4/5" client:load>🧑‍⚕️ Transfer Doctor️</Button>
-                <Button variant="disable" className="text-xl px-3 py-6 w-4/5" client:load>🖨️ Print Receipt</Button>
+                <Button variant="secondary" className="text-xl px-3 py-6 w-4/5" client:load>🧑‍⚕️ Transfer Doctor️</Button>
+                <Button variant="secondary" className="text-xl px-3 py-6 w-4/5" client:load>🖨️ Print Receipt</Button>
             </div>
         </div>
     </div>

@@ -7,6 +7,7 @@ type Env struct {
 	Password  string
 	User      string
 	JwtSecret string
+	Host      string
 }
 
 type CreateDoctorRequest struct {

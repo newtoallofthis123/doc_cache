@@ -7,7 +7,7 @@ const query = term || ''
 
 let auth_token = ''
 if(Astro.cookies.get('token')) {
-    auth_token = Astro.cookies.get('token').value
+    auth_token = Astro.cookies.get('token')?.value || ''
 }
 else{
     return Astro.redirect('/auth/login')

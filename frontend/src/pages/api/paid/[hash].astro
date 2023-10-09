@@ -1,5 +1,6 @@
 ---
 const {hash} = Astro.params
+import { API_URL } from "@/constants";
 
 if(Astro.cookies.get('token') == null){
     return new Response(JSON.stringify({error: 'Not logged in'}), {status: 401})
@@ -7,7 +8,7 @@ if(Astro.cookies.get('token') == null){
 
 let token = Astro.cookies.get('token')?.value
 
-await fetch(`http://localhost:2468/paid/${hash}`, {
+await fetch(`${API_URL}paid/${hash}`, {
     method: 'PUT',
     headers: {
         'Authorization': `${token}`

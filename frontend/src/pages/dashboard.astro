@@ -6,12 +6,8 @@ import AddForm from '../components/small/add_form';
 if (Astro.cookies.get('token') == null) {
     return Astro.redirect('/auth/login');
 }
-const doc_res = await fetch(`http://localhost:2468/doctors`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': Astro.cookies.get('token')?.value || ''
-        }
+const doc_res = await fetch(`http://localhost:4321/api/doctors`, {
+        method: 'GET'
     }).then((res) => res.json())
 
 //add all docs to docs

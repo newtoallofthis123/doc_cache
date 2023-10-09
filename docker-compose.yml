@@ -1,0 +1,34 @@
+services:
+  database:
+    image: postgres
+    restart: always
+
+    environment:
+      - POSTGRES_USER=joshi
+      - POSTGRES_PASSWORD=${PASSWORD}
+      - POSTGRES_DB=${DB}
+
+    ports:
+      - 5432
+
+    volumes:
+      - doc_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    restart: always
+
+    env_file:
+      - backend/.env
+
+    environment:
+      - HOST=database
+
+    ports:
+      - 2468:2468
+
+    depends_on:
+      - database
+      
+volumes:
+  doc_data:

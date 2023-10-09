@@ -4,9 +4,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import Toastify from 'toastify-js';
-import Appointment from "@/components/small/appointment.tsx";
-import DeletePatient from "@/components/small/delete.tsx";
-import Payment from "@/components/small/payment.tsx";
+import Appointment from '@/components/small/appointment.tsx';
+import DeletePatient from '@/components/small/delete.tsx';
+import Payment from '@/components/small/payment.tsx';
 
 export type Props = {
     token: string;
@@ -16,25 +16,30 @@ export type Props = {
 };
 
 type Patient = {
-    full_name: string,
-    age: number,
-    gender: string,
-    p_id: string,
-    payment: number,
-    phone:  string,
-    doc_id: number,
-    problems: string,
-    diagnosis: string,
-    medicines: string,
-    description: string,
-    paid: boolean,
-    next_appointment: string,
-    created_at: string,
-}
+    full_name: string;
+    age: number;
+    gender: string;
+    p_id: string;
+    payment: number;
+    phone: string;
+    doc_id: number;
+    problems: string;
+    diagnosis: string;
+    medicines: string;
+    description: string;
+    paid: boolean;
+    next_appointment: string;
+    created_at: string;
+};
 
-export default function UpdateForm({ patient_raw, doctor, token, size="small" }: Props) {
+export default function UpdateForm({
+    patient_raw,
+    doctor,
+    token,
+    size = 'small',
+}: Props) {
     const [patient, setPatient] = React.useState(patient_raw);
-    
+
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         const data = new FormData(e.currentTarget);
@@ -59,38 +64,43 @@ export default function UpdateForm({ patient_raw, doctor, token, size="small" }:
             },
             body: JSON.stringify(patient),
             mode: 'no-cors',
-        }).then((res) => res.json()).catch((err) => console.log(err));
-
-        if (res == "Patient Created") {
-            Toastify({
-                text: 'Patient Created Successfully!',
-                duration: 3000,
-                gravity: 'top',
-                position: 'right',
-                style: {
-                    background: '#d0fdba',
+        })
+            .then((res) => {
+                res.json();
+                if (res.status == 200) {
+                    Toastify({
+                        text: 'Patient Updated Successfully!',
+                        duration: 3000,
+                        gravity: 'top',
+                        position: 'right',
+                        style: {
+                            color: '#000',
+                            background: '#d0fdba',
+                        },
+                    }).showToast();
+                } else {
+                    Toastify({
+                        text: 'Patient Update Failed!',
+                        duration: 3000,
+                        gravity: 'top',
+                        position: 'right',
+                        style: {
+                            color: '#000',
+                            background: '#f9a8a8',
+                        },
+                    }).showToast();
                 }
-            }).showToast();
-        } else {
-            Toastify({
-                text: 'Patient Creation Failed!',
-                duration: 3000,
-                gravity: 'top',
-                position: 'right',
-                style: {
-                    background: '#f9a8a8',
-                }
-            }).showToast();
-        }
+            })
+            .catch((err) => console.log(err));
     }
 
     return (
         <form
             onSubmit={handleSubmit}
-            className={`rounded-xl ${size == "wide" && 'w-2/3'} shadow-xl`}
+            className={`rounded-xl ${size == 'wide' && 'w-2/3'} shadow-xl`}
         >
             <div className="flex flex-col justify-between bg-neutral-900 text-white w-full px-6 pb-2 pt-4 m-0">
-                <div className='flex flex-row justify-between items-center'>
+                <div className="flex flex-row justify-between items-center">
                     <DeletePatient patient={patient} client:load />
                     <Payment patient={patient} client:load />
                     <Appointment patient={patient} token={token} />
@@ -112,7 +122,10 @@ export default function UpdateForm({ patient_raw, doctor, token, size="small" }:
                         placeholder="Enter The Full Name of the Patient"
                         value={patient.full_name}
                         onChange={(e: any) => {
-                            setPatient({ ...patient, full_name: e.target.value });
+                            setPatient({
+                                ...patient,
+                                full_name: e.target.value,
+                            });
                         }}
                     />
                 </div>
@@ -131,7 +144,10 @@ export default function UpdateForm({ patient_raw, doctor, token, size="small" }:
                             placeholder="Enter The Age"
                             value={patient.age}
                             onChange={(e: any) => {
-                                setPatient({ ...patient, age: parseInt(e.target.value) });
+                                setPatient({
+                                    ...patient,
+                                    age: parseInt(e.target.value),
+                                });
                             }}
                         />
                     </div>
@@ -149,7 +165,10 @@ export default function UpdateForm({ patient_raw, doctor, token, size="small" }:
                             type="text"
                             value={patient.gender}
                             onChange={(e: any) => {
-                                setPatient({ ...patient, gender: e.target.value });
+                                setPatient({
+                                    ...patient,
+                                    gender: e.target.value,
+                                });
                             }}
                             placeholder="Gender of the Patient"
                         />
@@ -169,7 +188,10 @@ export default function UpdateForm({ patient_raw, doctor, token, size="small" }:
                             type="number"
                             value={patient.payment}
                             onChange={(e: any) => {
-                                setPatient({ ...patient, payment: parseInt(e.target.value) });
+                                setPatient({
+                                    ...patient,
+                                    payment: parseInt(e.target.value),
+                                });
                             }}
                             placeholder="Fee and Medicines Cost"
                         />
@@ -188,7 +210,10 @@ export default function UpdateForm({ patient_raw, doctor, token, size="small" }:
                             type="phone"
                             value={patient.phone}
                             onChange={(e: any) => {
-                                setPatient({ ...patient, phone: e.target.value });
+                                setPatient({
+                                    ...patient,
+                                    phone: e.target.value,
+                                });
                             }}
                             placeholder="Personal Mobile"
                         />
@@ -198,9 +223,11 @@ export default function UpdateForm({ patient_raw, doctor, token, size="small" }:
                     <Label className="w-1/5 text-base" htmlFor="doc_id">
                         Doctor ID:
                     </Label>
-                    <p className='w-4/5'>
-                        Please use the transfer patient option to change the doctor.
-                        The doctor ID {patient.doc_id} (<span className='underline'>{doctor}</span>) will be used for this patient.
+                    <p className="w-4/5">
+                        Please use the transfer patient option to change the
+                        doctor. The doctor ID {patient.doc_id} (
+                        <span className="underline">{doctor}</span>) will be
+                        used for this patient.
                     </p>
                     <Input
                         readOnly
@@ -227,7 +254,10 @@ export default function UpdateForm({ patient_raw, doctor, token, size="small" }:
                         type="text"
                         value={patient.problems}
                         onChange={(e: any) => {
-                            setPatient({ ...patient, problems: e.target.value });
+                            setPatient({
+                                ...patient,
+                                problems: e.target.value,
+                            });
                         }}
                         placeholder="Patient Problems, Separated by ;"
                     />
@@ -246,7 +276,10 @@ export default function UpdateForm({ patient_raw, doctor, token, size="small" }:
                         type="text"
                         value={patient.diagnosis}
                         onChange={(e: any) => {
-                            setPatient({ ...patient, diagnosis: e.target.value });
+                            setPatient({
+                                ...patient,
+                                diagnosis: e.target.value,
+                            });
                         }}
                         placeholder="Suitable Diagnosis for the Patient"
                     />
@@ -265,7 +298,10 @@ export default function UpdateForm({ patient_raw, doctor, token, size="small" }:
                         type="text"
                         value={patient.medicines}
                         onChange={(e: any) => {
-                            setPatient({ ...patient, medicines: e.target.value });
+                            setPatient({
+                                ...patient,
+                                medicines: e.target.value,
+                            });
                         }}
                         placeholder="Medicines Prescribed, Separated by ;"
                     />
@@ -282,7 +318,10 @@ export default function UpdateForm({ patient_raw, doctor, token, size="small" }:
                         autoComplete="off"
                         value={patient.description}
                         onChange={(e: any) => {
-                            setPatient({ ...patient, description: e.target.value });
+                            setPatient({
+                                ...patient,
+                                description: e.target.value,
+                            });
                         }}
                         className="border-2 border-neutral-200 bg-white w-4/5"
                         placeholder="Description of the Condition"
@@ -291,7 +330,7 @@ export default function UpdateForm({ patient_raw, doctor, token, size="small" }:
             </div>
             <div className="flex justify-center pb-4">
                 <Button type="submit" className="text-center w-3/5 mt-5">
-                    Add The Patient
+                    Update The Patient
                 </Button>
             </div>
         </form>

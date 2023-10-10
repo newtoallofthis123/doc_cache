@@ -1,11 +1,8 @@
 # DocCache FrontEnd
 
-The DocCache Hospital Management system boasts of a very _fast_, _responsive_ and _easy to use_ interface. It is built using the [Astro.js](https://astro.build) framework and is powered by [React](https://react.dev) and [TailwindCSS](https://tailwindcss.com).
+The DocCache Hospital Management system boasts of a very _fast_, _responsive_ and _easy to use_ interface. It is built using the [Next.js](https://nextjs.org) framework and is powered by [React](https://react.dev) and [TailwindCSS](https://tailwindcss.com).
 
-It is __not__ a SPA (Single Page Application) and is rendered on the server. This means that the website is __fast__ and __more accessible__ than a SPA.
-You can run this stuff on the toaster and it will probably still work and be just as fast.
-
-However, this also comes under a small caveat. The website is not as interactive as a SPA. This means that you will have to reload the page to see changes. This might not be that big a deal for a hospital management system, but it is still taken care of: every request automatically refreshes the page.
+It is a SPA (Single Page Application) and is rendered on the server. This means that the website is __fast__ and __more accessible__ than a SPA.
 
 ## Screenshot
 
@@ -35,7 +32,7 @@ The auth part of the doctor flow is used to login and logout of the website. It 
 
 ### Dashboard
 
-The dashboard is the main part of the doctor flow. It is the part that is used to manage the patients. 
+The dashboard is the main part of the doctor flow. It is the part that is used to manage the patients.
 It features a simple `add` form to add new patients and a table with a fast search bar to view all the patients.
 
 The search algorithm is very fast. It is a modified version of substring search algorithm.
@@ -43,7 +40,7 @@ The substring search algorithm is ideal for searching large amounts of data. It 
 
 ### Patient
 
-The patient flow is the crux of the doctor flow. It provides an easy to interface to manage the patients. 
+The patient flow is the crux of the doctor flow. It provides an easy to interface to manage the patients.
 You can perform the following actions on the patient:
 1. View
 2. Update
@@ -92,12 +89,18 @@ Then you can run the development server:
 npm run dev
 ```
 
-This will start the development server on `localhost:4321`. You can access the website by going to `localhost:4321` in your browser.
+This will start the development server on `localhost:3000`. You can access the website by going to `localhost:3000` in your browser.
 
 ## Hosting the website
 
 It is not recommended to host the website on a server.
 Although all the data is stored in the database, the website is not secure. It is not recommended to host the website on a public server, especially if you are storing sensitive patient data.
+
+There is also a simple `.dockerfile` provided to host the website on a docker container. You can build the docker image using the following command:
+
+```bash
+docker build -t doc_cache_frontend .
+```
 
 ## Contributing
 

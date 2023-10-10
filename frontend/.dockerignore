@@ -1,5 +1,4 @@
 node_modules
-.idea
-.vscode
-.DS_Store
-dist
+README.md
+.next
+.git

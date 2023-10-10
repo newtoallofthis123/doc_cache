@@ -6,8 +6,9 @@ import Link from "next/link";
 import {Button} from "@/components/ui/button";
 import DeletePatient from "@/components/custom/delete";
 import Payment from "@/components/custom/paid";
-import {Patient} from "@/types";
+import {Doctor, Patient} from "@/types";
 import Appointment from "@/components/custom/appointment";
+import Print from "@/components/custom/print";
 
 export default async function PatientPage({params}: { params: { hash: string } }) {
     const token = cookies().get('token')?.value as string
@@ -124,10 +125,9 @@ export default async function PatientPage({params}: { params: { hash: string } }
                     <Appointment token={token} patient={data as Patient}/>
                 </div>
                 <div className="grid gap-y-2">
-                    <Button variant="secondary" className="text-xl px-3 py-6 w-4/5">🧑‍⚕️ Transfer
+                    <Button variant='ghost' className="text-xl px-3 py-6 w-4/5">🧑‍⚕️ Transfer
                         Doctor️</Button>
-                    <Button variant="secondary" className="text-xl px-3 py-6 w-4/5">🖨️ Print
-                        Receipt</Button>
+                    <Print patient={data as Patient} doctor={doctor_data as Doctor}/>
                 </div>
             </div>
         </div>

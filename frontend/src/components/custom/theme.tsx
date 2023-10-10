@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export function ModeToggle() {
-    const [theme, setTheme] = React.useState(localStorage.getItem("theme") || "system")
+    const defaultTheme = typeof window !== "undefined" ? localStorage.getItem("theme") : null
+    const [theme, setTheme] = React.useState(defaultTheme || "system")
     //on change
     React.useEffect(() => {
         if (theme === "light") {

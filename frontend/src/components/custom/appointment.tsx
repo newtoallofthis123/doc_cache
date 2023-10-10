@@ -15,10 +15,12 @@ import {Calendar} from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button"
 import React from "react";
 import {backend} from "@/constants";
-import {Patient} from "@/types";
+import { Patient } from "@/types";
+import { useToast } from "../ui/use-toast";
 
 export default function Appointment({patient, token}:{patient: Patient, token: string}) {
     const [next, setNext] = React.useState<Date | undefined>(new Date(patient.next_appointment))
+    const { toast } = useToast()
     return (
         <>
             <AlertDialog>
@@ -55,11 +57,22 @@ export default function Appointment({patient, token}:{patient: Patient, token: s
                                     },
                                     body: JSON.stringify({
                                         "next_appointment": next,
+                                        "p_id": patient.p_id
                                     }),
                                 }).then(() => {
-                                    typeof window !== "undefined" && window.location.reload();
+                                    toast({
+                                        title: "Appointment Set",
+                                        description: "Appointment has been set successfully.",
+                                        duration: 5000
+                                    })
                                 }).catch(
                                     (err) => {
+                                        toast({
+                                            title: "Appointment Could Not Be Set",
+                                            description: "Appointment could not be set " + err, 
+                                            duration: 5000,
+                                            variant: "destructive"
+                                        })
                                         console.log(err);
                                     }
                                 )

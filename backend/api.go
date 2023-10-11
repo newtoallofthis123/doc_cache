@@ -561,6 +561,24 @@ func (api *ApiServer) handlePending(c *gin.Context) {
 	c.JSON(200, pending)
 }
 
+func (api *ApiServer) handlePendingAll(c *gin.Context) {
+	err := api.handleJWT(c)
+	if err != nil {
+		log.Println("Error validating JWT for next appointment")
+		c.JSON(500, err)
+		return
+	}
+
+	pending, err := api.store.GetAllPending()
+	if err != nil {
+		log.Println("Error getting pending from db")
+		c.JSON(500, err)
+		return
+	}
+
+	c.JSON(200, pending)
+}
+
 func (api *ApiServer) handleNewTransaction(c *gin.Context) {
 	err := api.handleJWT(c)
 	if err != nil {
@@ -663,6 +681,7 @@ func (api *ApiServer) Start() error {
 	r.GET("/search", api.handlePatientSearch)
 	r.GET("/source", api.handleViewSource)
 	r.GET("/pending/:doc_id", api.handlePending)
+	r.GET("/pending", api.handlePendingAll)
 	r.GET("/transactions", api.handleViewAllTransactions)
 	r.GET("/transactions/:transaction_id", api.handleViewTransaction)
 

@@ -37,6 +37,7 @@ type Store interface {
 	CreatePending(pId string, docId int) error
 	DeletePending(pId string) error
 	GetPending(docId int) ([]Patient, error)
+	GetAllPending() ([]Patient, error)
 
 	// Transactions
 	CreateTransaction(transaction TransactionRequest) error
@@ -553,6 +554,43 @@ func (pq *DBInstance) GetPending(docId int) ([]Patient, error) {
 		pendingPatients = append(pendingPatients, patient)
 	}
 	defer rows.Close()
+
+	return pendingPatients, nil
+}
+
+func (pq *DBInstance) GetAllPending() ([]Patient, error){
+	query := `
+	SELECT * FROM pending
+	`
+
+	rows, err := pq.Db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	var pendingPatients []Patient
+
+	for rows.Next() {
+		// Well I only need the p_id
+		// But I need to scan the other fields as well
+		var pId string
+		var docId int
+		var id int
+		var createdAt string
+
+		err := rows.Scan(&id, &pId, &docId, &createdAt)
+
+		if err != nil {
+			return nil, err
+		}
+
+		patient, err := pq.GetPatient(pId)
+		if err != nil {
+			return nil, err
+		}
+
+		pendingPatients = append(pendingPatients, patient)
+	}
 
 	return pendingPatients, nil
 }

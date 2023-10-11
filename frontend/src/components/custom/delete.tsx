@@ -41,7 +41,7 @@ export default function DeletePatient({p_id, token}: { p_id: string, token: stri
                                 }
                             })
                             const data = await res.json();
-                            if (data.status == 'Patient Deleted') {
+                            if (data === 'Patient Deleted') {
                                 typeof window !== 'undefined' && window.location.replace('/')
                             } else {
                                 toast({

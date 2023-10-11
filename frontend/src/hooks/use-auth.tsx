@@ -1,6 +1,5 @@
 import {cookies} from "next/headers";
 import {backend} from "@/constants";
-import {redirect} from "next/navigation";
 
 export default async function useAuth() {
     const token = cookies().get('token')?.value || '';

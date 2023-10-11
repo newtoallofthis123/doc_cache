@@ -88,7 +88,8 @@ export default function PatientForm({ patient, update, token, size = 'small' }: 
             })
         }
 
-        !update && typeof window !== 'undefined' && window.location.replace(`/patients/${String(res)}`);
+        //TODO: Redirect to the patient page
+        // !update && typeof window !== 'undefined' && window.location.replace(`/patients/${String(res)}`);
     }
 
     return (

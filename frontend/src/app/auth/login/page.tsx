@@ -27,6 +27,12 @@ export default function Login() {
             httpOnly: true,
             secure: true
         })
+        cookies().set('doc_id', doc_id.toString(), {
+            path: '/',
+            maxAge: 60 * 60 * 24 * 7,
+            httpOnly: true,
+            secure: true
+        })
         redirect('/');
     }
 
